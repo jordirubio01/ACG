@@ -2,6 +2,8 @@
 #define PHONGMATERIAL
 
 #include "material.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
 
 class Phong : public Material
 {
