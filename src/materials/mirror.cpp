@@ -1,15 +1,15 @@
-#include "phong.h"
+#include "mirror.h"
 
 #include <iostream>
 
-Phong::Phong()
+Mirror::Mirror()
 { }
 
-Phong::Phong(Vector3D Kd_, Vector3D Ks_, float alpha_):
+Mirror::Mirror(Vector3D Kd_, Vector3D Ks_, float alpha_):
 rho_d(Kd_), Ks(Ks_), alpha(alpha_){}
 
 
-Vector3D Phong::getReflectance(const Vector3D& n, const Vector3D& wo,
+Vector3D Mirror::getReflectance(const Vector3D& n, const Vector3D& wo,
     const Vector3D& wi) const {
 
     //FILL(...)
@@ -21,7 +21,7 @@ Vector3D Phong::getReflectance(const Vector3D& n, const Vector3D& wo,
 
 };
 
-double Phong::getIndexOfRefraction() const
+double Mirror::getIndexOfRefraction() const
 {
     std::cout << "Warning! Calling \"Material::getIndexOfRefraction()\" for a non-transmissive material"
               << std::endl;
@@ -30,13 +30,13 @@ double Phong::getIndexOfRefraction() const
 }
 
 
-Vector3D Phong::getEmissiveRadiance() const
+Vector3D Mirror::getEmissiveRadiance() const
 {
     return Vector3D(0.0);
 }
 
 
-Vector3D Phong::getDiffuseReflectance() const
+Vector3D Mirror::getDiffuseReflectance() const
 {
     return rho_d;
 }

@@ -17,10 +17,12 @@
 #include "shaders/intersectionshader.h"
 #include "shaders/depthshader.h"
 #include "shaders/normalshader.h"
+#include "shaders/whittedintegrator.h"
 
 
 #include "materials/phong.h"
 #include "materials/emissive.h"
+#include "materials/mirror.h"
 
 #include <chrono>
 
@@ -51,7 +53,7 @@ void buildSceneCornellBox(Camera*& cam, Film*& film,
     Material* cyandiffuse = new Phong(Vector3D(0.2, 0.8, 0.8), Vector3D(0, 0, 0), 100);
 
     //Task 5.3
-    //Material* mirror = new Mirror();
+    Material* mirror = new Mirror();
     //Task 5.4
     //Material* transmissive = new Transmissive(0.7);
 
@@ -224,8 +226,8 @@ int main()
     //First Assignment
     //Shader *shader = new IntersectionShader (intersectionColor, bgColor);
     //Shader *depthshader = new DepthShader (intersectionColor,7.5f, bgColor);
-    Shader* normalshader = new NormalShader(intersectionColor, bgColor);
-    //(... normal, whitted) ...
+    //Shader* normalshader = new NormalShader(intersectionColor, bgColor);
+    Shader* whittedshader = new WhittedIntegrator(intersectionColor, bgColor);
 
   
 
@@ -235,8 +237,8 @@ int main()
     Camera* cam;
     Scene myScene;
     //Create Scene Geometry and Illumiantion
-    buildSceneSphere(cam, film, myScene); //Task 2,3,4;
-    //buildSceneCornellBox(cam, film, myScene); //Task 5
+    //buildSceneSphere(cam, film, myScene); //Task 2,3,4;
+    buildSceneCornellBox(cam, film, myScene); //Task 5
 
     //---------------------------------------------------------------------------
 
@@ -245,7 +247,7 @@ int main()
 
     // Launch some rays! TASK 2,3,...   
     auto start = high_resolution_clock::now();
-    raytrace(cam, normalshader, film, myScene.objectsList, myScene.LightSourceList);
+    raytrace(cam, whittedshader, film, myScene.objectsList, myScene.LightSourceList);
     auto stop = high_resolution_clock::now();
 
     

@@ -2,6 +2,7 @@
 #define WHITTEDINTEGRATOR_H
 
 #include "shader.h"
+#include "materials/phong.h"
 
 class WhittedIntegrator : public Shader
 {
