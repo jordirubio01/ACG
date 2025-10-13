@@ -30,13 +30,16 @@ Vector3D WhittedIntegrator::computeColor(const Ray &r, const std::vector<Shape*>
             Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
             // Reflected ray
             Ray reflectedRay(its.itsPoint, wr);
-            // Recursive, color reflected from this direction
-            Vector3D reflectedColor = computeColor(reflectedRay, objList, lsList);
-            // Reflected color
-            Lo = reflectedColor;
+            // Reflected color from this direction
+            Lo = computeColor(reflectedRay, objList, lsList);
         }
 
-        // 2. PHONG MATERIAL
+        // 2. TRANSMISSIVE MATERIAL
+        else if (material.hasTransmission()) {
+
+        }
+
+        // 3. PHONG MATERIAL
         else if (material.hasDiffuseOrGlossy()) {
             // For every light source...
             for (int i = 0; i < lsList.size(); i++) {

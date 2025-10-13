@@ -23,6 +23,7 @@
 #include "materials/phong.h"
 #include "materials/emissive.h"
 #include "materials/mirror.h"
+#include "materials/transmissive.h"
 
 #include <chrono>
 
@@ -55,7 +56,7 @@ void buildSceneCornellBox(Camera*& cam, Film*& film,
     //Task 5.3
     Material* mirror = new Mirror();
     //Task 5.4
-    //Material* transmissive = new Transmissive(0.7);
+    Material* transmissive = new Transmissive(0.7);
 
 
     /* ******* */
