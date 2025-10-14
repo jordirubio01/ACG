@@ -36,7 +36,33 @@ Vector3D WhittedIntegrator::computeColor(const Ray &r, const std::vector<Shape*>
 
         // 2. TRANSMISSIVE MATERIAL
         else if (material.hasTransmission()) {
+			double n_i = 1.0; // Index of refraction of the medium outside the object (air)
+			double n_t = material.getIndexOfRefraction(); // Index of refraction of the medium inside the object
 
+			// Check if the ray enters or exits the object
+            if (dot(wo, n) < 0) {
+            // Ray exits the object
+				n = -n;
+				std::swap(n_i, n_t);
+            }
+			double mu = n_t / n_i;
+
+			// Check if the discriminant is positive (if not, there is total internal reflection)
+            double discr = 1.0 - (mu * mu) * (1.0 - dot(n, wo) * dot(n, wo));
+
+            if (discr < 0) {
+                //Total internal reflection. It behaves like a mirror
+                Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
+                Ray reflectedRay = Ray(its.itsPoint, wr);
+                color = computeColor(reflectedRay, objList, lsList);
+            }
+            else {
+				Vector3D wt = (-mu * wo + n * (mu * dot(n, wo) - sqrt(discr))).normalized();
+                //Refracted ray
+				Ray refractedRay = Ray(its.itsPoint, wt);
+				//Refracted color from this direction
+				color = computeColor(refractedRay, objList, lsList);
+            }
         }
 
         // 3. PHONG MATERIAL
