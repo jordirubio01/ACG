@@ -14,7 +14,7 @@ Vector3D IntersectionShader::computeColor(const Ray &r, const std::vector<Shape*
     //(FILL..)
 
     if (Utils::hasIntersection(r, objList)) {
-        return Vector3D(1.0, 0, 0);
+        return hitColor;
     }
 
     return bgColor;
