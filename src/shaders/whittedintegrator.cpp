@@ -20,7 +20,7 @@ Vector3D WhittedIntegrator::computeColor(const Ray &r, const std::vector<Shape*>
         Vector3D n = its.normal.normalized(); // Normal at position x
         Vector3D wi; // Incident light direction (depending on each lightsource)
         Vector3D fr; // Reflectance (diffuse + specular)
-        Vector3D Lo = Vector3D(0, 0, 0); // Direct illumination
+        Vector3D color = Vector3D(0, 0, 0); // Resulting color
         int V=0; // Visibility term (1 if visible; 0 if occluded)
         const Material& material = its.shape->getMaterial();
 
@@ -29,9 +29,9 @@ Vector3D WhittedIntegrator::computeColor(const Ray &r, const std::vector<Shape*>
             // Perfect reflected direction at its
             Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
             // Reflected ray
-            Ray reflectedRay(its.itsPoint, wr);
+            Ray reflectedRay = Ray(its.itsPoint, wr);
             // Reflected color from this direction
-            Lo = computeColor(reflectedRay, objList, lsList);
+            color = computeColor(reflectedRay, objList, lsList);
         }
 
         // 2. TRANSMISSIVE MATERIAL
@@ -51,7 +51,7 @@ Vector3D WhittedIntegrator::computeColor(const Ray &r, const std::vector<Shape*>
                 double costheta = std::max(0.0, dot(wi, n));
 
                 // VISIBILITY TERM
-                // Ray from position x to the light source
+                // Ray from its to the light source
                 // (it does not include the extremes, so will not collide with the its itself)
                 Ray shadowRay = Ray(its.itsPoint, wi);
                 Intersection shadowIts;
@@ -68,21 +68,22 @@ Vector3D WhittedIntegrator::computeColor(const Ray &r, const std::vector<Shape*>
                 else V = 1; // If there is no other object in this direction, its is visible
 
                 // REFLECTANCE OF THE MATERIAL (diffuse + specular)
-
                 fr = material.getReflectance(n, wo, wi);
                 // Incident light intensity
                 Vector3D Li = lsList[i]->getIntensity();
 
-                // AMBIENT LIGHT
-                Vector3D ambientLight = Vector3D(0.2, 0.2, 0.2);
-                // Compute diffuse coefficient from the material
-                Vector3D kd = material.getDiffuseReflectance();
-
-                // DIRECT ILLUMINATION
-                Lo += kd * ambientLight + Li * fr * costheta * V;
+				// DIRECT ILLUMINATION (DIFFUSE + SPECULAR)
+                color += Li * fr * costheta * V;
             }
+            // AMBIENT LIGHT
+            Vector3D ambientLight = Vector3D(0.2, 0.2, 0.2);
+            // Compute diffuse coefficient from the material
+            Vector3D kd = material.getDiffuseReflectance();
+
+			// DIRECT ILLUMINATION (AMBIENT + DIFFUSE + SPECULAR)
+			color += ambientLight * kd;
         }
-        return Lo;
+        return color;
     }
     
 
