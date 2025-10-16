@@ -11,8 +11,6 @@ WhittedIntegrator::WhittedIntegrator(Vector3D hitColor_, Vector3D bgColor_) :
 
 Vector3D WhittedIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &objList, const std::vector<LightSource*> &lsList) const
 {
-    //(FILL..)
-    
     Intersection its;
 
     if (Utils::getClosestIntersection(r, objList, its)) {
@@ -38,25 +36,29 @@ Vector3D WhittedIntegrator::computeColor(const Ray &r, const std::vector<Shape*>
         else if (material.hasTransmission()) {
 			double n_i = 1.0; // Index of refraction of the medium outside the object (air)
 			double n_t = material.getIndexOfRefraction(); // Index of refraction of the medium inside the object
+            double mu; // Ratio of refractive indices
 
 			// Check if the ray enters or exits the object
+            // If ray exits the object...
             if (dot(wo, n) < 0) {
-            // Ray exits the object
 				n = -n;
-				std::swap(n_i, n_t);
+                mu = n_i / n_t;
             }
-			double mu = n_t / n_i;
+            // If ray enters the object...
+			else mu = n_t / n_i;
 
 			// Check if the discriminant is positive (if not, there is total internal reflection)
             double discr = 1.0 - (mu * mu) * (1.0 - dot(n, wo) * dot(n, wo));
-
+            // If discriminant is negative...
             if (discr < 0) {
-                //Total internal reflection. It behaves like a mirror
+                //Total internal reflection, it behaves like a mirror
                 Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
                 Ray reflectedRay = Ray(its.itsPoint, wr);
                 color = computeColor(reflectedRay, objList, lsList);
             }
+            // If discriminant is not negative...
             else {
+                // We compute the transmissive refraction
 				Vector3D wt = (-mu * wo + n * (mu * dot(n, wo) - sqrt(discr))).normalized();
                 //Refracted ray
 				Ray refractedRay = Ray(its.itsPoint, wt);
