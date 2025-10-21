@@ -18,6 +18,7 @@
 #include "shaders/depthshader.h"
 #include "shaders/normalshader.h"
 #include "shaders/whittedintegrator.h"
+#include "shaders/hemisphericalintegrator.h"
 
 
 #include "materials/phong.h"
@@ -31,8 +32,7 @@ using namespace std::chrono;
 
 typedef std::chrono::duration<double, std::milli> durationMs;
 
-void buildSceneCornellBox(Camera*& cam, Film*& film,
-    Scene myScene)
+void buildSceneCornellBox(Camera*& cam, Film*& film, Scene myScene)
 {
     /* **************************** */
 /* Declare and place the camera */
@@ -224,7 +224,8 @@ int main()
     //Shader *shader = new IntersectionShader (intersectionColor, bgColor);
     //Shader *depthshader = new DepthShader (intersectionColor,7.5f, bgColor);
     //Shader* normalshader = new NormalShader(intersectionColor, bgColor);
-    Shader* whittedshader = new WhittedIntegrator(intersectionColor, bgColor);
+    //Shader* whittedshader = new WhittedIntegrator(intersectionColor, bgColor);
+    Shader* hemisphericalshader = new HemisphericalIntegrator(intersectionColor, bgColor);
 
   
 
@@ -244,7 +245,7 @@ int main()
 
     // Launch some rays! TASK 2,3,...   
     auto start = high_resolution_clock::now();
-    raytrace(cam, whittedshader, film, myScene.objectsList, myScene.LightSourceList);
+    raytrace(cam, hemisphericalshader, film, myScene.objectsList, myScene.LightSourceList);
     auto stop = high_resolution_clock::now();
 
     
