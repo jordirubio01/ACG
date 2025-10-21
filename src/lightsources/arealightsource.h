@@ -15,6 +15,7 @@ public:
 
     Vector3D getIntensity() const;        
     Vector3D sampleLightPosition() const ;
+    Vector3D generateRandomPosition() const;
 
     double getArea() const {
         Vector3D square_dim = myAreaLightsource->v1 + myAreaLightsource->v2;

@@ -20,3 +20,14 @@ Vector3D AreaLightSource::sampleLightPosition()   const
     return Vector3D(0.0);
 }
 
+Vector3D AreaLightSource::generateRandomPosition() const
+{
+    double u = (double)std::rand() / RAND_MAX;
+    double v = (double)std::rand() / RAND_MAX;
+
+    Vector3D randpos = myAreaLightsource->corner
+        + u * myAreaLightsource->v1
+        + v * myAreaLightsource->v2;
+    return randpos;
+}
+

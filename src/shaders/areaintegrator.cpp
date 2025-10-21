@@ -1,16 +1,17 @@
-#include "hemisphericalintegrator.h"
+#include "areaintegrator.h"
 #include "../core/utils.h"
 #include "../core/hemisphericalsampler.h"
 
-HemisphericalIntegrator::HemisphericalIntegrator() :
+AreaIntegrator::AreaIntegrator() :
     hitColor(Vector3D(1, 0, 0))
 { }
 
-HemisphericalIntegrator::HemisphericalIntegrator(Vector3D hitColor_, Vector3D bgColor_) :
+AreaIntegrator::AreaIntegrator(Vector3D hitColor_, Vector3D bgColor_) :
     Shader(bgColor_), hitColor(hitColor_)
 { }
 
-Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &objList, const std::vector<LightSource*> &lsList) const
+Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &objList, const std::vector<LightSource*> &lsList,
+    const std::vector<AreaLightSource*> &areaLs) const
 {
     Intersection its;
 
@@ -30,7 +31,7 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
             // Reflected ray
             Ray reflectedRay = Ray(its.itsPoint, wr);
             // Reflected color from this direction
-            color = computeColor(reflectedRay, objList, lsList);
+            color = computeColor(reflectedRay, objList, lsList, areaLs);
         }
 
         // 2. TRANSMISSIVE MATERIAL
@@ -55,7 +56,7 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
                 //Total internal reflection, it behaves like a mirror
                 Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
                 Ray reflectedRay = Ray(its.itsPoint, wr);
-                color = computeColor(reflectedRay, objList, lsList);
+                color = computeColor(reflectedRay, objList, lsList, areaLs);
             }
             // If discriminant is not negative...
             else {
@@ -64,7 +65,7 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
                 //Refracted ray
 				Ray refractedRay = Ray(its.itsPoint, wt);
 				//Refracted color from this direction
-				color = computeColor(refractedRay, objList, lsList);
+				color = computeColor(refractedRay, objList, lsList, areaLs);
             }
         }
 
@@ -72,8 +73,10 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
         else if (material.hasDiffuseOrGlossy()) {
             HemisphericalSampler sampler;
             int N = 200;
-            // For every sample per pixel...
+            // For every sample in the area lightsource...
             for (int i = 0; i < N; i++) {
+                // Incident light position
+                Vector3D lightPos = areaLs[0]->generateRandomPosition(); // Only one area for now
                 // Incident light direction (from its to lightsource position)
                 wi = sampler.getSample(n);
                 // Ray from its towards the direction wi
@@ -132,5 +135,7 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
         return color;
     }
     
+
+
     return bgColor;
 }
