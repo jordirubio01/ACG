@@ -20,6 +20,7 @@
 #include "shaders/whittedintegrator.h"
 #include "shaders/hemisphericalintegrator.h"
 #include "shaders/areaintegrator.h"
+#include "shaders/purepathintegrator.h"
 
 
 #include "materials/phong.h"
@@ -228,6 +229,7 @@ int main()
     //Shader* whittedshader = new WhittedIntegrator(intersectionColor, bgColor);
     //Shader* hemisphericalshader = new HemisphericalIntegrator(intersectionColor, bgColor);
     Shader* areashader = new AreaIntegrator(intersectionColor, bgColor);
+    //Shader* purepathshader = new PurePathIntegrator(intersectionColor, bgColor);
 
   
 
