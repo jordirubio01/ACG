@@ -90,27 +90,8 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
                 // Direction (negative direction will be black, a value of 0)
                 double costheta = std::max(0.0, dot(wi, n));
 
-                // VISIBILITY TERM
-                // Ray from its to the light source
-                // (it does not include the extremes, so will not collide with the its itself)
-                //Ray shadowRay = Ray(its.itsPoint, wi);
-                //Intersection shadowIts;
-                // Get closest intersection from its to the lightsource direction if exists...
-                //if (Utils::getClosestIntersection(shadowRay, objList, shadowIts)) {
-                //    double distItsToLight = (lightPos - its.itsPoint).length();
-                //    double distItsToObstacle = (shadowIts.itsPoint - its.itsPoint).length();
-                    // If there is an obstacle between its and light...
-                //    if (distItsToObstacle < distItsToLight) {
-                //        V = 0; // Object is not visible
-                //    }
-                //    else V = 1; // Else, object is visible
-                //}
-                //else V = 1; // If there is no other object in this direction, its is visible
-
                 // REFLECTANCE OF THE MATERIAL (diffuse + specular)
                 fr = material.getReflectance(n, wo, wi);
-                // Incident light intensity
-                //Li = lsList[i]->getIntensity();
 
 				// DIRECT ILLUMINATION (DIFFUSE + SPECULAR)
                 color += 1.0 / N * (Li * fr * costheta) * 2 * M_PI;

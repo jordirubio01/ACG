@@ -10,8 +10,7 @@ AreaIntegrator::AreaIntegrator(Vector3D hitColor_, Vector3D bgColor_) :
     Shader(bgColor_), hitColor(hitColor_)
 { }
 
-Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &objList, const std::vector<LightSource*> &lsList,
-    const std::vector<AreaLightSource*> &areaLs) const
+Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &objList, const std::vector<LightSource*> &lsList) const
 {
     Intersection its;
 
@@ -21,7 +20,7 @@ Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &o
         Vector3D wi; // Incident light direction (depending on each lightsource)
         Vector3D fr; // Reflectance (diffuse + specular)
         Vector3D color = Vector3D(0, 0, 0); // Resulting color
-        //int V=0; // Visibility term (1 if visible; 0 if occluded)
+        int V=0; // Visibility term (1 if visible; 0 if occluded)
         const Material& material = its.shape->getMaterial();
 
         // 1. MIRROR MATERIAL
@@ -31,7 +30,7 @@ Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &o
             // Reflected ray
             Ray reflectedRay = Ray(its.itsPoint, wr);
             // Reflected color from this direction
-            color = computeColor(reflectedRay, objList, lsList, areaLs);
+            color = computeColor(reflectedRay, objList, lsList);
         }
 
         // 2. TRANSMISSIVE MATERIAL
@@ -56,7 +55,7 @@ Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &o
                 //Total internal reflection, it behaves like a mirror
                 Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
                 Ray reflectedRay = Ray(its.itsPoint, wr);
-                color = computeColor(reflectedRay, objList, lsList, areaLs);
+                color = computeColor(reflectedRay, objList, lsList);
             }
             // If discriminant is not negative...
             else {
@@ -65,73 +64,68 @@ Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &o
                 //Refracted ray
 				Ray refractedRay = Ray(its.itsPoint, wt);
 				//Refracted color from this direction
-				color = computeColor(refractedRay, objList, lsList, areaLs);
+				color = computeColor(refractedRay, objList, lsList);
             }
         }
-
+        
         // 3. PHONG MATERIAL
         else if (material.hasDiffuseOrGlossy()) {
-            HemisphericalSampler sampler;
-            int N = 200;
-            // For every sample in the area lightsource...
-            for (int i = 0; i < N; i++) {
-                // Incident light position
-                Vector3D lightPos = areaLs[0]->generateRandomPosition(); // Only one area for now
-                // Incident light direction (from its to lightsource position)
-                wi = sampler.getSample(n);
-                // Ray from its towards the direction wi
-                Ray shadowRay = Ray(its.itsPoint, wi);
-                Intersection shadowIts;
-                // Get closest intersection from its towards the direction wi...
-                Vector3D Li(0, 0, 0);
-                if (Utils::getClosestIntersection(shadowRay, objList, shadowIts)) {
-                    if (shadowIts.shape->getMaterial().isEmissive()) {
-                        Li = shadowIts.shape->getMaterial().getEmissiveRadiance();
-                        Vector3D lightPos = shadowIts.itsPoint;
+            int N = 256;
+            // For every light source...
+            for (int i = 0; i < lsList.size(); i++) {
+                // For every sample in the area lightsource...
+                for (int j = 0; j < N; j++) {
+                    // Incident light position
+                    Vector3D lightPos = lsList[i]->sampleLightPosition();
+                    // Incident light direction (from its to lightsource position)
+                    wi = (lightPos - its.itsPoint).normalized();
+                    // Geometric term (negative scalar products will be black, a value of 0)
+                    double geometricTerm = (std::max(0.0, dot(wi, n))
+                        * std::max(0.0, dot(-wi, lsList[i]->getNormal())))
+                        / pow((lightPos - its.itsPoint).length(), 2);
+
+                    // VISIBILITY TERM
+                    // Ray from its to the light source
+                    // (it does not include the extremes, so will not collide with the its itself)
+                    Ray shadowRay = Ray(its.itsPoint, wi);
+                    Intersection shadowIts;
+                    // Get closest intersection from its to the lightsource direction if exists...
+                    if (Utils::getClosestIntersection(shadowRay, objList, shadowIts)) {
+                        double distItsToLight = (lightPos - its.itsPoint).length();
+                        double distItsToObstacle = (shadowIts.itsPoint - its.itsPoint).length();
+                        // If there is an obstacle between its and light...
+                        if (distItsToObstacle < distItsToLight) {
+                            V = 0; // Object is not visible
+                        }
+                        else V = 1; // Else, object is visible
+                    }
+                    else V = 1; // If there is no other object in this direction, its is visible
+
+                    if (V == 1) {
+                        // REFLECTANCE OF THE MATERIAL (diffuse + specular)
+                        fr = material.getReflectance(n, wo, wi);
+                        // Incident light intensity
+                        Vector3D Li = lsList[i]->getIntensity();
+
+                        // DIRECT ILLUMINATION (DIFFUSE + SPECULAR)
+                        color += 1.0 / N * (Li * fr * geometricTerm) * lsList[i]->getArea();
                     }
                 }
-                // Direction (negative direction will be black, a value of 0)
-                double costheta = std::max(0.0, dot(wi, n));
+                // AMBIENT LIGHT
+                Vector3D ambientLight = Vector3D(0.2, 0.2, 0.2);
+                // Compute diffuse coefficient from the material
+                Vector3D kd = material.getDiffuseReflectance();
 
-                // VISIBILITY TERM
-                // Ray from its to the light source
-                // (it does not include the extremes, so will not collide with the its itself)
-                //Ray shadowRay = Ray(its.itsPoint, wi);
-                //Intersection shadowIts;
-                // Get closest intersection from its to the lightsource direction if exists...
-                //if (Utils::getClosestIntersection(shadowRay, objList, shadowIts)) {
-                //    double distItsToLight = (lightPos - its.itsPoint).length();
-                //    double distItsToObstacle = (shadowIts.itsPoint - its.itsPoint).length();
-                    // If there is an obstacle between its and light...
-                //    if (distItsToObstacle < distItsToLight) {
-                //        V = 0; // Object is not visible
-                //    }
-                //    else V = 1; // Else, object is visible
-                //}
-                //else V = 1; // If there is no other object in this direction, its is visible
-
-                // REFLECTANCE OF THE MATERIAL (diffuse + specular)
-                fr = material.getReflectance(n, wo, wi);
-                // Incident light intensity
-                //Li = lsList[i]->getIntensity();
-
-				// DIRECT ILLUMINATION (DIFFUSE + SPECULAR)
-                color += 1.0 / N * (Li * fr * costheta) * 2 * M_PI;
+                // DIRECT ILLUMINATION (AMBIENT + DIFFUSE + SPECULAR)
+                color += ambientLight * kd;
             }
-            // AMBIENT LIGHT
-            Vector3D ambientLight = Vector3D(0.2, 0.2, 0.2);
-            // Compute diffuse coefficient from the material
-            Vector3D kd = material.getDiffuseReflectance();
-
-			// DIRECT ILLUMINATION (AMBIENT + DIFFUSE + SPECULAR)
-			color += ambientLight * kd;
         }
 
         // 4. EMISSIVE MATERIAL
         if (material.isEmissive()) {
             color += material.getEmissiveRadiance();
         }
-
+        
         return color;
     }
     

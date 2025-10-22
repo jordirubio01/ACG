@@ -14,14 +14,6 @@ Vector3D AreaLightSource::getIntensity() const
 
 Vector3D AreaLightSource::sampleLightPosition()   const
 {
-    //FILL(...)
-    // 
-    //New Randam Pos inside Area Lightsource
-    return Vector3D(0.0);
-}
-
-Vector3D AreaLightSource::generateRandomPosition() const
-{
     double u = (double)std::rand() / RAND_MAX;
     double v = (double)std::rand() / RAND_MAX;
 

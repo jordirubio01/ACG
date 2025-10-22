@@ -12,8 +12,7 @@ public:
 
     virtual Vector3D computeColor(const Ray &r,
                              const std::vector<Shape*> &objList,
-                             const std::vector<LightSource*> &lsList,
-                             const std::vector<AreaLightSource*> &areaLs) const;
+                             const std::vector<LightSource*> &lsList) const;
 
     Vector3D hitColor;
 };
