@@ -104,11 +104,11 @@ Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &o
                     if (V == 1) {
                         // REFLECTANCE OF THE MATERIAL (diffuse + specular)
                         fr = material.getReflectance(n, wo, wi);
-                        // Incident light intensity
-                        Vector3D Li = lsList[i]->getIntensity();
+						// Emmited light intensity from the area light source
+                        Vector3D Le = lsList[i]->getIntensity();
 
                         // DIRECT ILLUMINATION (DIFFUSE + SPECULAR)
-                        color += 1.0 / N * (Li * fr * geometricTerm) * lsList[i]->getArea();
+                        color += 1.0 / N * (Le * fr * geometricTerm) * lsList[i]->getArea() * V;
                     }
                 }
                 // AMBIENT LIGHT
