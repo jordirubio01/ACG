@@ -117,11 +117,12 @@ Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &o
             // Compute diffuse coefficient from the material
             Vector3D kd = material.getDiffuseReflectance();
 
-            // DIRECT ILLUMINATION (AMBIENT + DIFFUSE + SPECULAR)
+            // ILLUMINATION (AMBIENT + DIFFUSE + SPECULAR)
             color += ambientLight * kd;
         }
 
         // 4. EMISSIVE MATERIAL
+        // If material is emissive, we also add its radiance
         if (material.isEmissive()) {
             color += material.getEmissiveRadiance();
         }
