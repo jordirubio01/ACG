@@ -34,15 +34,14 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
             // Perfect reflected direction at its
             Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
             // Reflected ray
-            Ray reflectedRay = Ray(its.itsPoint, wr);
-			reflectedRay.depth = r.depth + 1;
+            Ray reflectedRay = Ray(its.itsPoint, wr, r.depth);
+			//reflectedRay.depth = r.depth + 1;
             // Reflected color from this direction
             color = computeColor(reflectedRay, objList, lsList);
         }
 
         // 2. TRANSMISSIVE MATERIAL
         else if (material.hasTransmission()) {
-            
 			double n_i = 1.0; // Index of refraction of the medium outside the object (air)
 			double n_t = material.getIndexOfRefraction(); // Index of refraction of the medium inside the object
             double mu; // Ratio of refractive indices
@@ -62,8 +61,8 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
             if (discr < 0) {
                 //Total internal reflection, it behaves like a mirror
                 Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
-                Ray reflectedRay = Ray(its.itsPoint, wr);
-                reflectedRay.depth = r.depth + 1;
+                Ray reflectedRay = Ray(its.itsPoint, wr, r.depth+1);
+                //reflectedRay.depth = r.depth + 1;
                 color = computeColor(reflectedRay, objList, lsList);
             }
             // If discriminant is not negative...
@@ -71,8 +70,8 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
                 // We compute the transmissive refraction
 				Vector3D wt = (-mu * wo + n * (mu * dot(n, wo) - sqrt(discr))).normalized();
                 //Refracted ray
-				Ray refractedRay = Ray(its.itsPoint, wt);
-                refractedRay.depth = r.depth + 1;
+				Ray refractedRay = Ray(its.itsPoint, wt, r.depth);
+                //refractedRay.depth = r.depth + 1;
 				//Refracted color from this direction
 				color = computeColor(refractedRay, objList, lsList);
             }
@@ -81,10 +80,10 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
 		// 3. PURE PATH TRACING FOR DIFFUSE AND GLOSSY MATERIALS
         else if (material.hasDiffuseOrGlossy()) {
             HemisphericalSampler sampler;
-            int N = 10;
+            int N = 256;
             Vector3D Lo(0, 0, 0);
 
-			if (r.depth > 1) {
+			if (r.depth >= 1) {
 				N = 1; // Reduce number of samples for deeper bounces
             }
             // For every sample per pixel...

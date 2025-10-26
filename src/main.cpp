@@ -22,6 +22,7 @@
 #include "shaders/areaintegrator.h"
 #include "shaders/purepathintegrator.h"
 #include "shaders/neeintegrator.h"
+#include "shaders/neeimprovedintegrator.h"
 
 
 #include "materials/phong.h"
@@ -89,9 +90,9 @@ void buildSceneCornellBox(Camera*& cam, Film*& film, Scene myScene)
 
     Matrix4x4 sphereTransform2;
     sphereTransform2 = Matrix4x4::translate(Vector3D(-1.5, -offset + 3 * radius, 4));
-    Shape* s2 = new Sphere(radius, sphereTransform2, blueGlossy_20);// transmissive);
+    Shape* s2 = new Sphere(radius, sphereTransform2, transmissive); //blueGlossy_20);//
 
-    Shape* square = new Square(Vector3D(offset + 0.999, -offset - 0.2, 3.0), Vector3D(0.0, 4.0, 0.0), Vector3D(0.0, 0.0, 2.0), Vector3D(-1.0, 0.0, 0.0), cyandiffuse);// mirror);
+    Shape* square = new Square(Vector3D(offset + 0.999, -offset - 0.2, 3.0), Vector3D(0.0, 4.0, 0.0), Vector3D(0.0, 0.0, 2.0), Vector3D(-1.0, 0.0, 0.0), mirror); // cyandiffuse);//
 
     myScene.AddObject(s1);
     myScene.AddObject(s2);
@@ -230,8 +231,9 @@ int main()
     //Shader* whittedshader = new WhittedIntegrator(intersectionColor, bgColor);
     //Shader* hemisphericalshader = new HemisphericalIntegrator(intersectionColor, bgColor);
     //Shader* areashader = new AreaIntegrator(intersectionColor, bgColor);
-    //Shader* purepathshader = new PurePathIntegrator(intersectionColor, bgColor);
-    Shader* neeshader = new NEEIntegrator(intersectionColor, bgColor);
+    Shader* purepathshader = new PurePathIntegrator(intersectionColor, bgColor);
+    //Shader* neeshader = new NEEIntegrator(intersectionColor, bgColor);
+    //Shader* neeimprovedshader = new NEEImprovedIntegrator(intersectionColor, bgColor);
 
   
 
@@ -251,7 +253,7 @@ int main()
 
     // Launch some rays! TASK 2,3,...   
     auto start = high_resolution_clock::now();
-    raytrace(cam, neeshader, film, myScene.objectsList, myScene.LightSourceList);
+    raytrace(cam, purepathshader, film, myScene.objectsList, myScene.LightSourceList);
     auto stop = high_resolution_clock::now();
 
     
