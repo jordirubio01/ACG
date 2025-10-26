@@ -18,15 +18,20 @@ Vector3D NEEIntegrator::computeColor(const Ray& r,
 
     Intersection its;
     if (Utils::getClosestIntersection(r, objList, its)) {
-        Vector3D wo = -r.d; // direcció del raig que ve de la càmera
-        Vector3D color(0, 0, 0);
+        Vector3D wo = -r.d; // Viewing direction (from its to the cam position)
+        Vector3D n = its.normal.normalized(); // Normal at position x
+        Vector3D wi; // Incident light direction (depending on each lightsource)
+        Vector3D fr; // Reflectance (diffuse + specular)
+        Vector3D color = Vector3D(0, 0, 0); // Resulting color
+        //int V=0; // Visibility term (1 if visible; 0 if occluded)
+        const Material& material = its.shape->getMaterial();
 
-        // 1. Radiació emesa pel punt
-        if (its.shape->getMaterial().isEmissive()) {
-            color += its.shape->getMaterial().getEmissiveRadiance();
+        // EMISSIVE RADIANCE
+        if (material.isEmissive()) {
+            color += material.getEmissiveRadiance();
         }
 
-        // 2. Radiació reflectida (segons NEE)
+		// REFLECTED RADIANCE
         color += reflectedRadiance(its, wo, r.depth, objList, lsList);
 
         return color;
