@@ -17,35 +17,31 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
 
     if (Utils::getClosestIntersection(r, objList, its)) {
         Vector3D wo = -r.d; // Viewing direction (from its to the cam position)
-        Vector3D n = its.normal.normalized(); // Normal at position x
+        Vector3D n = its.normal; // Normal at position x
         Vector3D wi; // Incident light direction (depending on each lightsource)
         Vector3D fr; // Reflectance (diffuse + specular)
-        Vector3D color = Vector3D(0, 0, 0); // Resulting color
         //int V=0; // Visibility term (1 if visible; 0 if occluded)
         const Material& material = its.shape->getMaterial();
+        Vector3D color = material.getEmissiveRadiance(); // Emitted light (vector 0 if not emissive)
+
+        // If maximum depth is reached...
+        if (r.depth >= MAX_DEPTH) {
+            return color;
+        }
 
         // 1. MIRROR MATERIAL
         if (material.hasSpecular()) {
-            // If maximum depth is reached...
-            if (r.depth >= MAX_DEPTH) {
-				return Vector3D(0, 0, 0);
-            }
-
             // Perfect reflected direction at its
             Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
             // Reflected ray
-            Ray reflectedRay = Ray(its.itsPoint, wr);
-			reflectedRay.depth = r.depth + 1;
+            Ray reflectedRay = Ray(its.itsPoint, wr, r.depth);
+			//reflectedRay.depth = r.depth + 1;
             // Reflected color from this direction
             color = computeColor(reflectedRay, objList, lsList);
         }
 
         // 2. TRANSMISSIVE MATERIAL
         else if (material.hasTransmission()) {
-            // If maximum depth is reached...
-            if (r.depth >= MAX_DEPTH) {
-                return Vector3D(0, 0, 0);
-            }
 			double n_i = 1.0; // Index of refraction of the medium outside the object (air)
 			double n_t = material.getIndexOfRefraction(); // Index of refraction of the medium inside the object
             double mu; // Ratio of refractive indices
@@ -65,8 +61,8 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
             if (discr < 0) {
                 //Total internal reflection, it behaves like a mirror
                 Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
-                Ray reflectedRay = Ray(its.itsPoint, wr);
-                reflectedRay.depth = r.depth + 1;
+                Ray reflectedRay = Ray(its.itsPoint, wr, r.depth+1);
+                //reflectedRay.depth = r.depth + 1;
                 color = computeColor(reflectedRay, objList, lsList);
             }
             // If discriminant is not negative...
@@ -74,8 +70,8 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
                 // We compute the transmissive refraction
 				Vector3D wt = (-mu * wo + n * (mu * dot(n, wo) - sqrt(discr))).normalized();
                 //Refracted ray
-				Ray refractedRay = Ray(its.itsPoint, wt);
-                refractedRay.depth = r.depth + 1;
+				Ray refractedRay = Ray(its.itsPoint, wt, r.depth);
+                //refractedRay.depth = r.depth + 1;
 				//Refracted color from this direction
 				color = computeColor(refractedRay, objList, lsList);
             }
@@ -83,15 +79,11 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
 
 		// 3. PURE PATH TRACING FOR DIFFUSE AND GLOSSY MATERIALS
         else if (material.hasDiffuseOrGlossy()) {
-			// If maximum depth is reached...
-            if (r.depth >= MAX_DEPTH) {
-                return Vector3D(0, 0, 0);
-            }
             HemisphericalSampler sampler;
-            int N = 10;
+            int N = 256;
             Vector3D Lo(0, 0, 0);
 
-			if (r.depth > 1) {
+			if (r.depth >= 1) {
 				N = 1; // Reduce number of samples for deeper bounces
             }
             // For every sample per pixel...
@@ -107,15 +99,11 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
                 Vector3D Li = computeColor(NewRay, objList, lsList);
                 // Direction (negative direction will be black, a value of 0)
                 double costheta = std::max(0.0, dot(wi, n));
+                // ILLUMINATION (DIFFUSE + SPECULAR)
                 Lo += Li * fr * costheta * 2 * M_PI;
             }
 			// Average Lo over N samples
 			color += Lo / N;
-        }
-
-        // 4. EMISSIVE MATERIAL
-        if (material.isEmissive()) {
-            color += material.getEmissiveRadiance();
         }
 
         return color;
