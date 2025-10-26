@@ -108,7 +108,7 @@ Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &o
                         Vector3D Le = lsList[i]->getIntensity();
 
                         // DIRECT ILLUMINATION (DIFFUSE + SPECULAR)
-                        color += 1.0 / N * (Le * fr * geometricTerm) * lsList[i]->getArea() * V;
+                        color += 1.0 / N * (Le * fr * geometricTerm) * lsList[i]->getArea();
                     }
                 }
                 // AMBIENT LIGHT
