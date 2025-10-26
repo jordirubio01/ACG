@@ -51,7 +51,7 @@ Vector3D NEEImprovedIntegrator::directRadiance(const Intersection& its, const Ve
     int V = 0; // Visibility term (1 if visible; 0 if occluded)
     const Material& material = its.shape->getMaterial();
 
-    int N = 5;
+    int N = 4;
     // For every light source...
     for (int i = 0; i < lsList.size(); i++) {
         // For every sample in the area lightsource...
@@ -115,8 +115,8 @@ Vector3D NEEImprovedIntegrator::indirectRadiance(const Intersection& its, const 
         // Perfect reflected direction at its
         Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
         // Reflected ray
-        Ray reflectedRay = Ray(its.itsPoint, wr);
-        reflectedRay.depth = depth + 1;
+        Ray reflectedRay = Ray(its.itsPoint, wr, depth);
+        //reflectedRay.depth = depth + 1;
         // Reflected color from this direction
         Lind = computeColor(reflectedRay, objList, lsList);
     }
@@ -142,8 +142,7 @@ Vector3D NEEImprovedIntegrator::indirectRadiance(const Intersection& its, const 
         if (discr < 0) {
             //Total internal reflection, it behaves like a mirror
             Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
-            Ray reflectedRay = Ray(its.itsPoint, wr);
-            reflectedRay.depth = depth + 1;
+            Ray reflectedRay = Ray(its.itsPoint, wr, depth + 1);
             Lind = computeColor(reflectedRay, objList, lsList);
         }
         // If discriminant is not negative...
@@ -151,8 +150,7 @@ Vector3D NEEImprovedIntegrator::indirectRadiance(const Intersection& its, const 
             // We compute the transmissive refraction
             Vector3D wt = (-mu * wo + n * (mu * dot(n, wo) - sqrt(discr))).normalized();
             //Refracted ray
-            Ray refractedRay = Ray(its.itsPoint, wt);
-            refractedRay.depth = depth + 1;
+            Ray refractedRay = Ray(its.itsPoint, wt, depth);
             //Refracted color from this direction
             Lind = computeColor(refractedRay, objList, lsList);
         }

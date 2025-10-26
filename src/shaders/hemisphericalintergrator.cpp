@@ -20,7 +20,6 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
         Vector3D wi; // Incident light direction (depending on each lightsource)
         Vector3D fr; // Reflectance (diffuse + specular)
         Vector3D color = Vector3D(0, 0, 0); // Resulting color
-        //int V=0; // Visibility term (1 if visible; 0 if occluded)
         const Material& material = its.shape->getMaterial();
 
         // 1. MIRROR MATERIAL
@@ -71,7 +70,7 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
         // 3. PHONG MATERIAL
         else if (material.hasDiffuseOrGlossy()) {
             HemisphericalSampler sampler;
-            int N = 200;
+            int N = 256;
             // For every sample per pixel...
             for (int i = 0; i < N; i++) {
                 // Incident light direction (from its to lightsource position)
@@ -106,6 +105,7 @@ Vector3D HemisphericalIntegrator::computeColor(const Ray &r, const std::vector<S
         }
 
         // 4. EMISSIVE MATERIAL
+        // If material is emissive, we also add its radiance
         if (material.isEmissive()) {
             color += material.getEmissiveRadiance();
         }

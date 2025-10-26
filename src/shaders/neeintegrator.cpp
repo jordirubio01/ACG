@@ -51,7 +51,7 @@ Vector3D NEEIntegrator::directRadiance(const Intersection& its, const Vector3D& 
     int V = 0; // Visibility term (1 if visible; 0 if occluded)
     const Material& material = its.shape->getMaterial();
 
-    int N = 5;
+    int N = 4;
     // For every light source...
     for (int i = 0; i < lsList.size(); i++) {
         // For every sample in the area lightsource...
@@ -111,7 +111,7 @@ Vector3D NEEIntegrator::indirectRadiance(const Intersection& its, const Vector3D
     Vector3D fr; // Reflectance (diffuse + specular)
 
     HemisphericalSampler sampler;
-    int N = 40;
+    int N = 64;
 
     if (depth >= 1) {
         N = 1; // Reduce number of samples for deeper bounces

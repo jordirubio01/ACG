@@ -231,9 +231,9 @@ int main()
     //Shader* whittedshader = new WhittedIntegrator(intersectionColor, bgColor);
     //Shader* hemisphericalshader = new HemisphericalIntegrator(intersectionColor, bgColor);
     //Shader* areashader = new AreaIntegrator(intersectionColor, bgColor);
-    Shader* purepathshader = new PurePathIntegrator(intersectionColor, bgColor);
+    //Shader* purepathshader = new PurePathIntegrator(intersectionColor, bgColor);
     //Shader* neeshader = new NEEIntegrator(intersectionColor, bgColor);
-    //Shader* neeimprovedshader = new NEEImprovedIntegrator(intersectionColor, bgColor);
+    Shader* neeimprovedshader = new NEEImprovedIntegrator(intersectionColor, bgColor);
 
   
 
@@ -253,7 +253,7 @@ int main()
 
     // Launch some rays! TASK 2,3,...   
     auto start = high_resolution_clock::now();
-    raytrace(cam, purepathshader, film, myScene.objectsList, myScene.LightSourceList);
+    raytrace(cam, neeimprovedshader, film, myScene.objectsList, myScene.LightSourceList);
     auto stop = high_resolution_clock::now();
 
     

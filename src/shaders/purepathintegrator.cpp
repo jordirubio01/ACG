@@ -20,7 +20,6 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
         Vector3D n = its.normal; // Normal at position x
         Vector3D wi; // Incident light direction (depending on each lightsource)
         Vector3D fr; // Reflectance (diffuse + specular)
-        //int V=0; // Visibility term (1 if visible; 0 if occluded)
         const Material& material = its.shape->getMaterial();
         Vector3D color = material.getEmissiveRadiance(); // Emitted light (vector 0 if not emissive)
 
@@ -35,7 +34,6 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
             Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
             // Reflected ray
             Ray reflectedRay = Ray(its.itsPoint, wr, r.depth);
-			//reflectedRay.depth = r.depth + 1;
             // Reflected color from this direction
             color = computeColor(reflectedRay, objList, lsList);
         }
@@ -59,20 +57,18 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
             double discr = 1.0 - (mu * mu) * (1.0 - dot(n, wo) * dot(n, wo));
             // If discriminant is negative...
             if (discr < 0) {
-                //Total internal reflection, it behaves like a mirror
+                // Total internal reflection, it behaves like a mirror
                 Vector3D wr = (2 * dot(wo, n) * n - wo).normalized();
                 Ray reflectedRay = Ray(its.itsPoint, wr, r.depth+1);
-                //reflectedRay.depth = r.depth + 1;
                 color = computeColor(reflectedRay, objList, lsList);
             }
             // If discriminant is not negative...
             else {
                 // We compute the transmissive refraction
 				Vector3D wt = (-mu * wo + n * (mu * dot(n, wo) - sqrt(discr))).normalized();
-                //Refracted ray
+                // Refracted ray
 				Ray refractedRay = Ray(its.itsPoint, wt, r.depth);
-                //refractedRay.depth = r.depth + 1;
-				//Refracted color from this direction
+				// Refracted color from this direction
 				color = computeColor(refractedRay, objList, lsList);
             }
         }
@@ -91,12 +87,11 @@ Vector3D PurePathIntegrator::computeColor(const Ray &r, const std::vector<Shape*
                 // Incident light direction (from its to lightsource position)
                 wi = sampler.getSample(n);
                 // Ray from its towards the direction wi
-                Ray NewRay = Ray(its.itsPoint, wi);
-                NewRay.depth = r.depth + 1;
+                Ray newRay = Ray(its.itsPoint, wi, r.depth + 1);
                 // REFLECTANCE OF THE MATERIAL (diffuse + specular)
                 fr = material.getReflectance(n, wo, wi);
 				// Reflected color from this direction (recursive call)
-                Vector3D Li = computeColor(NewRay, objList, lsList);
+                Vector3D Li = computeColor(newRay, objList, lsList);
                 // Direction (negative direction will be black, a value of 0)
                 double costheta = std::max(0.0, dot(wi, n));
                 // ILLUMINATION (DIFFUSE + SPECULAR)
