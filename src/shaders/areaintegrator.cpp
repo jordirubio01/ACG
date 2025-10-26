@@ -111,14 +111,14 @@ Vector3D AreaIntegrator::computeColor(const Ray &r, const std::vector<Shape*> &o
                         color += 1.0 / N * (Le * fr * geometricTerm) * lsList[i]->getArea();
                     }
                 }
-                // AMBIENT LIGHT
-                Vector3D ambientLight = Vector3D(0.2, 0.2, 0.2);
-                // Compute diffuse coefficient from the material
-                Vector3D kd = material.getDiffuseReflectance();
-
-                // DIRECT ILLUMINATION (AMBIENT + DIFFUSE + SPECULAR)
-                color += ambientLight * kd;
             }
+            // AMBIENT LIGHT
+            Vector3D ambientLight = Vector3D(0.2, 0.2, 0.2);
+            // Compute diffuse coefficient from the material
+            Vector3D kd = material.getDiffuseReflectance();
+
+            // DIRECT ILLUMINATION (AMBIENT + DIFFUSE + SPECULAR)
+            color += ambientLight * kd;
         }
 
         // 4. EMISSIVE MATERIAL
