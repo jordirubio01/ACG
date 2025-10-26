@@ -1,4 +1,4 @@
-#include "purepathintegrator.h"
+#include "purepathintegrator.h" // NEEINTTEGRATOR.h
 #include "../core/utils.h"
 #include "../core/hemisphericalsampler.h"
 
