@@ -27,6 +27,8 @@ void Application::init(GLFWwindow* window)
     example->mesh = Mesh::Get("res/meshes/sphere.obj");
     example->material = new StandardMaterial();
     this->node_list.push_back(example);
+
+    //example2->glm::translate()
 }
 
 void Application::update(float dt)

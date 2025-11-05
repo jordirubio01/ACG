@@ -57,3 +57,9 @@ public:
 	void render(Mesh* mesh, glm::mat4 model, Camera* camera);
 	void renderInMenu();
 };
+
+class VolumeMaterial : public FlatMaterial {
+public:
+
+	float absorption_coeff;
+};
