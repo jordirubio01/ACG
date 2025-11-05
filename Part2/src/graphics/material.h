@@ -62,4 +62,8 @@ class VolumeMaterial : public FlatMaterial {
 public:
 
 	float absorption_coeff;
+
+	VolumeMaterial(glm::vec4 color = glm::vec4(1.f));
+	~VolumeMaterial();
+
 };

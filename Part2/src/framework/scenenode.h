@@ -19,7 +19,7 @@ inline std::string typeToString(eType type)
 }
 
 class SceneNode {
-public:
+public:	
 
 	eType type;
 	static unsigned int lastNameId;

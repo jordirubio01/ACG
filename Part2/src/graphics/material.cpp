@@ -161,3 +161,14 @@ void StandardMaterial::renderInMenu()
 
 	if (!this->show_normals) ImGui::ColorEdit3("Color", (float*)&this->color);
 }
+
+VolumeMaterial::VolumeMaterial(glm::vec4 color)
+{
+	this->color = color;
+	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
+	this->absorption_coeff = 0.15f;
+}
+
+VolumeMaterial::~VolumeMaterial()
+{
+}

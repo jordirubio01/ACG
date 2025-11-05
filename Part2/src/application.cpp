@@ -28,7 +28,12 @@ void Application::init(GLFWwindow* window)
     example->material = new StandardMaterial();
     this->node_list.push_back(example);
 
-    //example2->glm::translate()
+    SceneNode* example2 = new SceneNode("Example Node 2");
+    example2->mesh = Mesh::Get("res/meshes/sphere.obj");
+    example2->model = glm::translate(example2->model, glm::vec3(3.f, 0.f, 0.f));
+    example2->material = new VolumeMaterial();
+    this->node_list.push_back(example2);
+
 }
 
 void Application::update(float dt)
