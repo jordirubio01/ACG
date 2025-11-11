@@ -167,6 +167,10 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->color = color;
 	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
 	this->absorption_coeff = 0.15f;
+	this->absorption_type = 0;
+	this->step_size = 0.015f;
+	this->noise_freq = 4.0f;
+	this->density_scale = 1.0f;
 	//this->bg_color = glm::vec4(0.3f, 0.5f, 0.8f, 1.0f);; // Default background color
 }
 
@@ -191,6 +195,10 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 	//this->shader->setUniform("u_bg_color", this->bg_color);
 	this->shader->setUniform("u_bg_color", Application::instance->background_color);
 	this->shader->setUniform("u_absorption_coeff", this->absorption_coeff);
+	this->shader->setUniform("u_absortion_type", this->absorption_type); // 0 -> homogeneous, 1 -> heterogeneous
+	this->shader->setUniform("u_step_size", this->step_size); //between 0.01 and 0.02
+	this->shader->setUniform("u_noise_freq", this->noise_freq); // between 2.5 and 6
+	this->shader->setUniform("u_density_scale", this->density_scale);// between 0.5 and 2.0
 }
 
 void VolumeMaterial::renderInMenu()
@@ -198,5 +206,8 @@ void VolumeMaterial::renderInMenu()
 	ImGui::Text("Material Type: %s", std::string("Volume").c_str());
 
 	ImGui::SliderFloat("Absorption Coefficient", (float*)&this->absorption_coeff, 0.0f, 5.0f);
-
+	//FALTA absortion type ( 0 o 1)
+	ImGui::SliderFloat("Step Size", (float*)&this->step_size, 0.01f, 0.02f);
+	ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 6.0f);
+	ImGui::SliderFloat("Density Scale", (float*)&this->density_scale, 0.5f, 2.0f);
 }

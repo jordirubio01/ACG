@@ -73,7 +73,7 @@ void Application::render()
 
 void Application::renderGUI()
 {
-    if (ImGui::TreeNodeEx("Scene", ImGuiTreeNodeFlags_DefaultOpen))
+    if (ImGui::TreeNodeEx("Scene",   ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::ColorEdit3("Ambient light", (float*)&this->ambient_light);
 
