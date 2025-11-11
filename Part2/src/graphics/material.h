@@ -61,14 +61,17 @@ public:
 class VolumeMaterial : public FlatMaterial {
 public:
 
+	Shader* absorption_shader = NULL;
+	Shader* emission_absorption_shader = NULL;
+
 	float absorption_coeff;
-	bool absorption_type;
+	int shader_type;
+	int absorption_type;
 	float step_size;
 	float noise_freq;
 	float density_scale;
-	//glm::vec4 bg_color;
 
-	VolumeMaterial(glm::vec4 color = glm::vec4(1.f));
+	VolumeMaterial(glm::vec4 color = glm::vec4(0.f));
 	~VolumeMaterial();
 
 	void setUniforms(Camera* camera, glm::mat4 model);

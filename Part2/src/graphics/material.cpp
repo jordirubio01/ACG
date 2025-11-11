@@ -165,13 +165,15 @@ void StandardMaterial::renderInMenu()
 VolumeMaterial::VolumeMaterial(glm::vec4 color)
 {
 	this->color = color;
-	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
+	this->absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
+	this->emission_absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/emission-absorption.fs");
+	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs"); // Default shader
 	this->absorption_coeff = 0.15f;
+	this->shader_type = 0;
 	this->absorption_type = 0;
 	this->step_size = 0.015f;
 	this->noise_freq = 4.0f;
 	this->density_scale = 1.0f;
-	//this->bg_color = glm::vec4(0.3f, 0.5f, 0.8f, 1.0f);; // Default background color
 }
 
 VolumeMaterial::~VolumeMaterial()
@@ -192,22 +194,38 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 	this->shader->setUniform("u_local_camera_pos", local_camera_pos);
 
 	this->shader->setUniform("u_color", this->color);
-	//this->shader->setUniform("u_bg_color", this->bg_color);
 	this->shader->setUniform("u_bg_color", Application::instance->background_color);
 	this->shader->setUniform("u_absorption_coeff", this->absorption_coeff);
-	this->shader->setUniform("u_absortion_type", this->absorption_type); // 0 -> homogeneous, 1 -> heterogeneous
-	this->shader->setUniform("u_step_size", this->step_size); //between 0.01 and 0.02
-	this->shader->setUniform("u_noise_freq", this->noise_freq); // between 2.5 and 6
-	this->shader->setUniform("u_density_scale", this->density_scale);// between 0.5 and 2.0
+
+	this->shader->setUniform("u_absorption_type", this->absorption_type);
+	this->shader->setUniform("u_step_size", this->step_size);
+	this->shader->setUniform("u_noise_freq", this->noise_freq);
+	this->shader->setUniform("u_density_scale", this->density_scale);
 }
 
 void VolumeMaterial::renderInMenu()
 {
 	ImGui::Text("Material Type: %s", std::string("Volume").c_str());
 
-	ImGui::SliderFloat("Absorption Coefficient", (float*)&this->absorption_coeff, 0.0f, 5.0f);
-	//FALTA absortion type ( 0 o 1)
-	ImGui::SliderFloat("Step Size", (float*)&this->step_size, 0.01f, 0.02f);
-	ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 6.0f);
-	ImGui::SliderFloat("Density Scale", (float*)&this->density_scale, 0.5f, 2.0f);
+	// Absorption shader or Emission-abosrption shader
+	const char* shader_types[] = { "Absorption", "Emission-Absorption" };
+	if (ImGui::Combo("Shader Type", (int*)&this->shader_type, shader_types, IM_ARRAYSIZE(shader_types)))
+	{
+		// Change used shader
+		if (this->shader_type == 0) this->shader = this->absorption_shader;
+		else this->shader = this->emission_absorption_shader;
+	}
+	// Homogeneous or heterogeneous selector
+	const char* types[] = { "Homogeneous", "Heterogeneous" };
+	ImGui::Combo("Absorption Type", (int*)&this->absorption_type, types, IM_ARRAYSIZE(types));
+	// Homogeneous GUI
+	if (this->absorption_type==0) ImGui::SliderFloat("Absorption Coefficient", (float*)&this->absorption_coeff, 0.0f, 5.0f);
+	// Heterogeneous GUI
+	else {
+		ImGui::SliderFloat("Step Size", (float*)&this->step_size, 0.01f, 0.02f);
+		ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 10.0f);
+		ImGui::SliderFloat("Density Scale", (float*)&this->density_scale, 0.0f, 10.0f);
+	}
+	// Emission-Absorption GUI
+	if (this->shader_type==1) ImGui::ColorEdit3("Emmited Color", (float*)&this->color);
 }
