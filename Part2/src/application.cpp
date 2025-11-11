@@ -49,7 +49,7 @@ void Application::update(float dt)
 void Application::render()
 {
     // Set the clear color (the background color)
-    glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glClearColor(0.3f, 0.5f, 0.8f, 1.0f);
 
     // Clear the window and the depth buffer
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

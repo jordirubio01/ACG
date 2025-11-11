@@ -167,8 +167,27 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->color = color;
 	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
 	this->absorption_coeff = 0.15f;
+	this->bg_color = glm::vec4(0.3f, 0.5f, 0.8f, 1.0f);; // Default background color
 }
 
 VolumeMaterial::~VolumeMaterial()
 {
+}
+
+void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
+{
+	// Upload node uniforms
+	this->shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
+	this->shader->setUniform("u_camera_position", camera->eye);
+	this->shader->setUniform("u_model", model);
+
+	glm::mat4 invModel = glm::inverse(model);
+	glm::vec4 temp = glm::vec4(camera->eye, 1.0);
+	temp = invModel * temp;
+	glm::vec3 local_camera_pos = glm::vec3(temp.x / temp.w, temp.y / temp.w, temp.z / temp.w);
+	this->shader->setUniform("u_local_camera_pos", local_camera_pos);
+
+	this->shader->setUniform("u_color", this->color);
+	this->shader->setUniform("u_bg_color", this->bg_color);
+	this->shader->setUniform("u_absorption_coeff", this->absorption_coeff);
 }
