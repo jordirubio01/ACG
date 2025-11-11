@@ -167,7 +167,7 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->color = color;
 	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
 	this->absorption_coeff = 0.15f;
-	this->bg_color = glm::vec4(0.3f, 0.5f, 0.8f, 1.0f);; // Default background color
+	//this->bg_color = glm::vec4(0.3f, 0.5f, 0.8f, 1.0f);; // Default background color
 }
 
 VolumeMaterial::~VolumeMaterial()
@@ -188,6 +188,15 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 	this->shader->setUniform("u_local_camera_pos", local_camera_pos);
 
 	this->shader->setUniform("u_color", this->color);
-	this->shader->setUniform("u_bg_color", this->bg_color);
+	//this->shader->setUniform("u_bg_color", this->bg_color);
+	this->shader->setUniform("u_bg_color", Application::instance->background_color);
 	this->shader->setUniform("u_absorption_coeff", this->absorption_coeff);
+}
+
+void VolumeMaterial::renderInMenu()
+{
+	ImGui::Text("Material Type: %s", std::string("Volume").c_str());
+
+	ImGui::SliderFloat("Absorption Coefficient", (float*)&this->absorption_coeff, 0.0f, 5.0f);
+
 }
