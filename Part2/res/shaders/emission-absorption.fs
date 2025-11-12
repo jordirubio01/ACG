@@ -11,9 +11,9 @@ uniform vec4 u_bg_color;		  // Background color
 uniform float u_absorption_coeff; // Absorption coefficient
 
 uniform int u_absorption_type;    // 0 is homogeneous; 1 is heterogeneous
-uniform float u_step_size;        // step size for ray marching
-uniform float u_noise_freq;       // frequency for noise sampling
-uniform float u_density_scale;    // scales noise to absorption
+uniform float u_step_size;        // Step size for ray marching
+uniform float u_noise_freq;       // Frequency for noise sampling
+uniform float u_density_scale;    // Scales noise to absorption
 
 out vec4 FragColor;
 
@@ -130,11 +130,10 @@ void main()
 
     // While t is inside the volume and optical thickness is not too high...
     while (t < tfar && tau < 10.0) {
-        vec3 sample_pos = origin_local + direction_local * t;
-
         // 3. COMPUTE THE OPTICAL THICKNESS
         // If heterogeneous, absorption coefficient changes...
         if (u_absorption_type == 1){
+            vec3 sample_pos = origin_local + direction_local * t;
             float density = max(0.0, snoise(sample_pos * u_noise_freq));
             mu = density * u_density_scale;
         }
@@ -142,13 +141,12 @@ void main()
         // 4. COMPUTE THE TRANSMITTANCE
         transmittance = exp(-tau);
         // UPDATE COLOR
-        color += mu * emitted_color * transmittance * step_size;
+        color += vec4(mu * emitted_color.rgb * transmittance * step_size, 1.0);
 
         t += step_size;
     }
     // 5. COMPUTE AND SET FINAL PIXEL COLOR
     color += vec4(u_bg_color.rgb * transmittance, 1.0);
-    
     
     FragColor = color;
 

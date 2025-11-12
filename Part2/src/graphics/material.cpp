@@ -167,8 +167,8 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->color = color;
 	this->absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
 	this->emission_absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/emission-absorption.fs");
-	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs"); // Default shader
-	this->absorption_coeff = 0.15f;
+	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs"); // Current shader
+	this->absorption_coeff = 0.5f;
 	this->shader_type = 0;
 	this->absorption_type = 0;
 	this->step_size = 0.015f;
@@ -186,17 +186,17 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 	this->shader->setUniform("u_viewprojection", camera->viewprojection_matrix);
 	this->shader->setUniform("u_camera_position", camera->eye);
 	this->shader->setUniform("u_model", model);
-
+	// We compute the local camera position outside the fragment shader
 	glm::mat4 invModel = glm::inverse(model);
 	glm::vec4 temp = glm::vec4(camera->eye, 1.0);
 	temp = invModel * temp;
 	glm::vec3 local_camera_pos = glm::vec3(temp.x / temp.w, temp.y / temp.w, temp.z / temp.w);
 	this->shader->setUniform("u_local_camera_pos", local_camera_pos);
-
+	// Volume color, background color and absorption coefficient
 	this->shader->setUniform("u_color", this->color);
 	this->shader->setUniform("u_bg_color", Application::instance->background_color);
 	this->shader->setUniform("u_absorption_coeff", this->absorption_coeff);
-
+	// Absorption type, ray marching step size, heterogeneous noise freq and density scale
 	this->shader->setUniform("u_absorption_type", this->absorption_type);
 	this->shader->setUniform("u_step_size", this->step_size);
 	this->shader->setUniform("u_noise_freq", this->noise_freq);
@@ -207,7 +207,7 @@ void VolumeMaterial::renderInMenu()
 {
 	ImGui::Text("Material Type: %s", std::string("Volume").c_str());
 
-	// Absorption shader or Emission-abosrption shader
+	// Absorption shader or Emission-absorption shader
 	const char* shader_types[] = { "Absorption", "Emission-Absorption" };
 	if (ImGui::Combo("Shader Type", (int*)&this->shader_type, shader_types, IM_ARRAYSIZE(shader_types)))
 	{
@@ -218,14 +218,15 @@ void VolumeMaterial::renderInMenu()
 	// Homogeneous or heterogeneous selector
 	const char* types[] = { "Homogeneous", "Heterogeneous" };
 	ImGui::Combo("Absorption Type", (int*)&this->absorption_type, types, IM_ARRAYSIZE(types));
+	// Step length (always displayed)
+	ImGui::SliderFloat("Step Length", (float*)&this->step_size, 0.01f, 0.02f);
 	// Homogeneous GUI
 	if (this->absorption_type==0) ImGui::SliderFloat("Absorption Coefficient", (float*)&this->absorption_coeff, 0.0f, 5.0f);
 	// Heterogeneous GUI
 	else {
-		ImGui::SliderFloat("Step Size", (float*)&this->step_size, 0.01f, 0.02f);
 		ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 10.0f);
 		ImGui::SliderFloat("Density Scale", (float*)&this->density_scale, 0.0f, 10.0f);
 	}
-	// Emission-Absorption GUI
-	if (this->shader_type==1) ImGui::ColorEdit3("Emmited Color", (float*)&this->color);
+	// Emission-Absorption extra parameter (emitted color)
+	if (this->shader_type==1) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
 }

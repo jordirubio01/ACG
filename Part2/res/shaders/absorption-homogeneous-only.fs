@@ -3,9 +3,8 @@
 in vec3 v_position;				  // Vertex position (local coords)
 in vec3 v_world_position;		  // Vertex position (world coords)
 
-uniform vec3 u_local_camera_pos;   // Camera position (world coords)
+uniform vec3 u_local_camera_pos;  // Camera position (world coords)
 uniform mat4 u_model;             // Model matrix (from local to world)
-//uniform mat4 u_inv_model;		  // Inverse model matrix (from world to local)
 
 uniform vec4 u_color;			  // Volume color
 uniform vec4 u_bg_color;		  // Background color
@@ -13,6 +12,7 @@ uniform float u_absorption_coeff; // Absorption coefficient
 
 out vec4 FragColor;
 
+/// FUNCTION USED FOR INTERSECTION
 // adapted from intersectCube in https://github.com/evanw/webgl-path-tracing/blob/master/webgl-path-tracing.js
 // compute the near and far intersections of the cube (stored in the x and y components) using the slab method
 // no intersection means vec.x > vec.y (really tNear > tFar)
@@ -26,6 +26,7 @@ vec2 intersectAABB(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) {
     return vec2(tNear, tFar);
 };
 
+/// MAIN FUNCTION
 void main()
 {
 	// 1. INITIALIZE RAY (POSITION AND DIRECTION)

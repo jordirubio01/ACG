@@ -22,7 +22,7 @@ void Application::init(GLFWwindow* window)
 
     this->ambient_light = glm::vec4(0.75f, 0.75f, 0.75f, 1.f);
 
-    this->background_color = glm::vec4(0.3f, 0.5f, 0.8f, 1.f);
+    this->background_color = glm::vec4(0.70f, 0.80f, 1.0f, 1.f);
 
     /* ADD NODES TO THE SCENE */
     //SceneNode* example = new SceneNode("Example Node");
@@ -30,7 +30,7 @@ void Application::init(GLFWwindow* window)
     //example->material = new StandardMaterial();
     //this->node_list.push_back(example);
 
-    SceneNode* example2 = new SceneNode("Example Node 2");
+    SceneNode* example2 = new SceneNode("Volume Node");
     example2->mesh = Mesh::Get("res/meshes/sphere.obj");
     //example2->model = glm::translate(example2->model, glm::vec3(3.f, 0.f, 0.f));
     example2->material = new VolumeMaterial();

@@ -11,9 +11,9 @@ uniform vec4 u_bg_color;		  // Background color
 uniform float u_absorption_coeff; // Absorption coefficient
 
 uniform int u_absorption_type;    // 0 is homogeneous; 1 is heterogeneous
-uniform float u_step_size;        // step size for ray marching
-uniform float u_noise_freq;       // frequency for noise sampling
-uniform float u_density_scale;    // scales noise to absorption
+uniform float u_step_size;        // Step size for ray marching
+uniform float u_noise_freq;       // Frequency for noise sampling
+uniform float u_density_scale;    // Scales noise to absorption
 
 out vec4 FragColor;
 
@@ -112,7 +112,7 @@ void main()
     float tnear = max(t_hit.x, 0.0);
     float tfar = t_hit.y;
 
-    // if no intersection...
+    // If there is no intersection...
     if (tnear > tfar) {
         FragColor = u_bg_color;
         return;
@@ -150,6 +150,6 @@ void main()
 
     // 5. COMPUTE AND SET FINAL PIXEL COLOR
     vec4 color = vec4(u_bg_color.rgb * transmittance, 1.0);
-    FragColor = color;
 
+    FragColor = color;
 }
