@@ -8,6 +8,9 @@
 #include "mesh.h"
 #include "texture.h"
 #include "shader.h"
+#include "openvdbReader.h"
+#include "grid.h"
+#include "bbox.h"
 
 class Material {
 public:
@@ -75,5 +78,9 @@ public:
 	~VolumeMaterial();
 
 	void setUniforms(Camera* camera, glm::mat4 model);
+	void render(Mesh* mesh, glm::mat4 model, Camera* camera);
 	void renderInMenu();
+
+	void loadVDB(std::string file_path);
+	void estimate3DTexture(easyVDB::OpenVDBReader* vdbReader);
 };

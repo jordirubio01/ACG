@@ -31,10 +31,21 @@ void Application::init(GLFWwindow* window)
     //this->node_list.push_back(example);
 
     SceneNode* example2 = new SceneNode("Volume Node");
-    example2->mesh = Mesh::Get("res/meshes/sphere.obj");
+    example2->mesh = Mesh::Get("res/meshes/cube.obj");
     //example2->model = glm::translate(example2->model, glm::vec3(3.f, 0.f, 0.f));
     example2->material = new VolumeMaterial();
     this->node_list.push_back(example2);
+
+    //SceneNode* example3 = new SceneNode("Example Node");
+    //example3->mesh = Mesh::Get("res/meshes/cube.obj");
+    //example3->material = new VolumeMaterial();
+    //this->node_list.push_back(example3);
+    //static_cast<VolumeMaterial*>(example3->material)->loadVDB("res/textures/bunny_cloud.vdb");
+
+    //Light* example_light = new Light();
+    //example_light->model = glm::translate(example_light->model, glm::vec3(3.f, 0.f, 0.f));
+    //node_list.push_back(example_light);
+
 
 }
 

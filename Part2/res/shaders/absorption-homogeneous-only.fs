@@ -5,6 +5,8 @@ in vec3 v_world_position;		  // Vertex position (world coords)
 
 uniform vec3 u_local_camera_pos;  // Camera position (world coords)
 uniform mat4 u_model;             // Model matrix (from local to world)
+uniform vec3 u_boxMin;            // Box min (local coords)
+uniform vec3 u_boxMax;            // Box max (local coords)
 
 uniform vec4 u_color;			  // Volume color
 uniform vec4 u_bg_color;		  // Background color
@@ -35,9 +37,9 @@ void main()
     
     // 2. COMPUTE INTERSECTIONS WITH THE VOLUME AUXILIARY GEOMETRY
     // We use the implementation suggested in the statement
-    vec3 boxMin = vec3(-0.5);
-    vec3 boxMax = vec3(0.5);
-    vec2 t_hit = intersectAABB(origin_local, direction_local, boxMin, boxMax);
+    //vec3 boxMin = vec3(-1.0);
+    //vec3 boxMax = vec3(1.0);
+    vec2 t_hit = intersectAABB(origin_local, direction_local, u_boxMin, u_boxMax);
     float tnear = max(t_hit.x, 0.0);
     float tfar = t_hit.y;
 
