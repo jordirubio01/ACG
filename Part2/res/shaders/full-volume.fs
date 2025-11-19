@@ -11,6 +11,7 @@ uniform vec3 u_boxMax;            // Box max (local coords)
 uniform vec4 u_color;			  // Volume color (emmited light color)
 uniform vec4 u_bg_color;		  // Background color
 uniform float u_absorption_coeff; // Absorption coefficient
+uniform float u_scattering_coeff; // Scattering coefficient
 
 uniform int u_absorption_type;    // 0 is homogeneous; 1 is heterogeneous
 uniform float u_step_size;        // Step size for ray marching
@@ -133,13 +134,13 @@ void main()
     while (t < tfar && transmittance > 0.0001) {
         // 3. COMPUTE THE OPTICAL THICKNESS
         // If heterogeneous, absorption coefficient changes...
-        if (u_absorption_type == 1){ // S'HA DE CANVIAR, NOMÉS ÉS UNA PROVA
+        if (u_absorption_type == 1){
             vec3 sample_pos = origin_local + direction_local * t;
             float density = max(0.0, snoise(sample_pos * u_noise_freq));
             mu = density * u_density_scale;
         }
         // Else if we have a 3D texture...
-        else if (u_absorption_type == 2){ // S'HA DE CANVIAR, NOMÉS ÉS UNA PROVA
+        else if (u_absorption_type == 2){
             vec3 sample_pos = origin_local + direction_local * t;
             vec3 texture_pos = (sample_pos + vec3(1.0)) / 2;
             float density = texture(u_texture, texture_pos).r;

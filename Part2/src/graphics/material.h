@@ -68,6 +68,7 @@ public:
 	Shader* emission_absorption_shader = NULL;
 
 	float absorption_coeff;
+	float scattering_coeff;
 	int shader_type;
 	int absorption_type;
 	float step_size;

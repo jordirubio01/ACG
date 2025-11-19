@@ -16,6 +16,7 @@ uniform int u_absorption_type;    // 0 is homogeneous; 1 is heterogeneous
 uniform float u_step_size;        // Step size for ray marching
 uniform float u_noise_freq;       // Frequency for noise sampling
 uniform float u_density_scale;    // Scales noise to absorption
+uniform sampler3D u_texture;      // Texture of the material
 
 out vec4 FragColor;
 
@@ -132,14 +133,22 @@ void main()
     else {
         float step_size = u_step_size;     // Traversal loop step size
         float t = tnear + step_size * 0.5; // Start from the closest intersection
+        float mu = 0.0;
 
         // While t is inside the volume and optical thickness is not too high...
         while (t < tfar && tau < 10.0) {
-            vec3 sample_pos = origin_local + direction_local * t;
-
             // 3. COMPUTE THE OPTICAL THICKNESS
-            float density = max(0.0, snoise(sample_pos * u_noise_freq));
-            float mu = density * u_density_scale;
+            if (u_absorption_type == 1) {
+                vec3 sample_pos = origin_local + direction_local * t;
+                float density = max(0.0, snoise(sample_pos * u_noise_freq));
+                mu = density * u_density_scale;
+            }
+            else {
+                vec3 sample_pos = origin_local + direction_local * t;
+                vec3 texture_pos = (sample_pos + vec3(1.0)) / 2;
+                float density = texture(u_texture, texture_pos).r;
+                mu = density * u_density_scale;
+            }
             tau += step_size * mu;
 
             t += step_size;
