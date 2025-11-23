@@ -206,12 +206,16 @@ void main()
 
         vec3 Le = u_color.rgb;  
 
-        // ------ In-scattering ------
+        // IN SCATTERING
         float transmittance_scatt = computeLightTransmittance(sample_pos);
         vec3 Li = u_light_color.rgb * u_light_intensity;
         vec3 Ls = Li * transmittance_scatt;
 
-        // ------ Full model ------
+        // PHASE FUNCTION (ISOTROPIC)
+        float phase = 1.0 / (4.0 * 3.14159265);
+        Ls *= phase;
+
+        // FULL MODEL
         color.rgb += (mu * Le + mu_s * Ls) * transmittance * step_size;
         color.a = 1.0;
 
