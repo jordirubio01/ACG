@@ -167,6 +167,7 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->color = color;
 	this->absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
 	this->emission_absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/emission-absorption.fs");
+	this->full_volume_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/full-volume.fs");
 	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs"); // Current shader
 	this->absorption_coeff = 0.5f;
 	this->scattering_coeff = 0.5f;

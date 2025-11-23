@@ -21,13 +21,12 @@ uniform sampler3D u_texture;      // Texture of the material
 
 uniform float u_light_intensity;  // Intensity of the light to be scattered
 uniform vec4 u_light_color;       // Color
-unifrom vec3 u_local_light_position; // Light position (local coords)
-uniform vec3 u_light_position;    // Light position (world coords)
-uniform int u_light_steps;        // Number of steps for light marching
-
+uniform vec3 u_local_light_position; // Light position (local coords)
+uniform vec3 u_light_position;    // Light position (world coords) --> no s'utilitza, però el deixo per si de cas perque està a setUniforms de light.cpp
+uniform int u_num_light_steps;    // Number of steps for light marching
+     
 
 out vec4 FragColor;
-
 /// FUNCTION USED FOR INTERSECTION
 // adapted from intersectCube in https://github.com/evanw/webgl-path-tracing/blob/master/webgl-path-tracing.js
 // compute the near and far intersections of the cube (stored in the x and y components) using the slab method
@@ -110,17 +109,62 @@ float snoise(vec3 v){
   return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
 }
 
+
+// SECOND RAY MARCHING --> he vist que per en GLSL es millor no repetir noms de variables tot i que estiguin dins la funció 
+float computeLightTransmittance(vec3 sample_)
+{
+    vec3 Ldir_local = normalize(u_local_light_position - sample_);
+
+    vec2 hit_ = intersectAABB(sample_, Ldir_local, u_boxMin, u_boxMax);
+    float tmax = hit_.y;
+
+    if (tmax <= 0.0)
+        return 0.0;
+
+    // si el l'ultim pas no queda enter no s'està tenint encara en compte
+    float step_ = tmax / float(u_num_light_steps);
+    float t_ = step_ * 0.5;
+    float tau_ = 0.0;
+    float transmittance_ = 1.0;
+
+    //potser es millor fer un while pero com que estem iterant per nombre de steps de moment deixo for
+    for (int i = 0; i < u_num_light_steps && transmittance_ > 0.0001; i++)
+    {
+        vec3 p = sample_ + Ldir_local * t_;
+        float mu_ = u_absorption_coeff;
+
+        if (u_absorption_type == 1) {
+            float density_ = max(0.0, snoise(p * u_noise_freq));
+            mu_ = density_ * u_density_scale;
+        }
+        else if (u_absorption_type == 2) {
+            vec3 texture_pos_ = (p + vec3(1.0)) / 2.0;
+            float density_ = texture(u_texture, texture_pos_).r;
+            mu_ = density_ * u_density_scale;
+        }
+
+        float mu_s = u_scattering_coeff;
+        float mu_t = mu_ + mu_s;
+
+        tau_ += mu_t * step_;
+        transmittance_ = exp(-tau_);
+        t_ += step_;
+    }
+
+    return transmittance_;
+}
+
 /// MAIN FUNCTION
 void main()
 {
-	// 1. INITIALIZE RAY (POSITION AND DIRECTION)
-	vec3 origin_local = u_local_camera_pos;
-	vec3 direction_local = normalize(v_position - origin_local);
-    
+    // 1. INITIALIZE RAY (POSITION AND DIRECTION)
+    vec3 origin_local = u_local_camera_pos;
+    vec3 direction_local = normalize(v_position - origin_local);
+
     // 2. COMPUTE INTERSECTIONS WITH THE VOLUME AUXILIARY GEOMETRY
     vec2 t_hit = intersectAABB(origin_local, direction_local, u_boxMin, u_boxMax);
     float tnear = max(t_hit.x, 0.0);
-    float tfar = t_hit.y;
+    float tfar  = t_hit.y;
 
     // if no intersection...
     if (tnear > tfar) {
@@ -141,30 +185,40 @@ void main()
     // While t is inside the volume and optical thickness is not too high...
     while (t < tfar && transmittance > 0.0001) {
         // 3. COMPUTE THE OPTICAL THICKNESS
+        vec3 sample_pos = origin_local + direction_local * t;
         // If heterogeneous, absorption coefficient changes...
-        if (u_absorption_type == 1){
-            vec3 sample_pos = origin_local + direction_local * t;
+        if (u_absorption_type == 1) { // S'HA DE CANVIAR, NOMÉS ÉS UNA PROVA
             float density = max(0.0, snoise(sample_pos * u_noise_freq));
             mu = density * u_density_scale;
         }
         // Else if we have a 3D texture...
-        else if (u_absorption_type == 2){
-            vec3 sample_pos = origin_local + direction_local * t;
-            vec3 texture_pos = (sample_pos + vec3(1.0)) / 2;
+        else if (u_absorption_type == 2) { // S'HA DE CANVIAR, NOMÉS ÉS UNA PROVA
+            vec3 texture_pos = (sample_pos + vec3(1.0)) / 2.0;
             float density = texture(u_texture, texture_pos).r;
             mu = density * u_density_scale;
         }
-        tau += step_size * mu;
-        // 4. COMPUTE THE TRANSMITTANCE
+
+        float mu_s = u_scattering_coeff;
+        float mu_t = mu + mu_s;
+
+        tau += mu_t * step_size;
         transmittance = exp(-tau);
-        // UPDATE COLOR
-        color += vec4(mu * emitted_color.rgb * transmittance * step_size, 1.0);
+
+        vec3 Le = u_color.rgb;  
+
+        // ------ In-scattering ------
+        float transmittance_scatt = computeLightTransmittance(sample_pos);
+        vec3 Li = u_light_color.rgb * u_light_intensity;
+        vec3 Ls = Li * transmittance_scatt;
+
+        // ------ Full model ------
+        color.rgb += (mu * Le + mu_s * Ls) * transmittance * step_size;
+        color.a = 1.0;
 
         t += step_size;
     }
-    // 5. COMPUTE AND SET FINAL PIXEL COLOR
-    color += vec4(u_bg_color.rgb * transmittance, 1.0);
-    
-    FragColor = color;
 
+    color.rgb += u_bg_color.rgb * transmittance;
+
+    FragColor = color;
 }
