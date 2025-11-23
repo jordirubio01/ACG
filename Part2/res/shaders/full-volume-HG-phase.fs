@@ -24,7 +24,7 @@ uniform vec4 u_light_color;       // Color
 uniform vec3 u_local_light_position; // Light position (local coords)
 uniform vec3 u_light_position;    // Light position (world coords) --> no s'utilitza, però el deixo per si de cas perque està a setUniforms de light.cpp
 uniform int u_num_light_steps;    // Number of steps for light marching
-uniform float_ug;                 // g parameter for Henyey-Greenstein phase function
+uniform float u_g;                 // g parameter for Henyey-Greenstein phase function
      
 
 out vec4 FragColor;
