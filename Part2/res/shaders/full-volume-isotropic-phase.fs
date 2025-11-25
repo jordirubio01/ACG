@@ -17,6 +17,7 @@ uniform int u_absorption_type;    // 0 is homogeneous; 1 is heterogeneous
 uniform float u_step_size;        // Step size for ray marching
 uniform float u_noise_freq;       // Frequency for noise sampling
 uniform float u_density_scale;    // Scales noise to absorption
+uniform float u_scattering_scale; // Scales noise to scattering
 uniform sampler3D u_texture;      // Texture of the material
 
 uniform float u_light_intensity;  // Intensity of the light to be scattered
@@ -110,50 +111,62 @@ float snoise(vec3 v){
 }
 
 
-// FUNCTION USED FOR SECOND RAY MARCHING (we better not repeat variable names)
-float computeLightTransmittance(vec3 sample_)
+// FUNCTION USED FOR SECOND RAY MARCHING
+float computeInScatteredLight(vec3 point_local)
 {
-    vec3 Ldir_local = normalize(u_local_light_position - sample_);
+    // 1. INITIALIZE RAY (FROM POINT TO LIGHT)
+    vec3 light_direction_local = normalize(u_local_light_position - point_local);
 
-    vec2 hit_ = intersectAABB(sample_, Ldir_local, u_boxMin, u_boxMax);
-    float tmax = hit_.y;
+    // 2. COMPUTE INTERSECTION WITH THE VOLUME AUXILIARY GEOMETRY
+    vec2 point_hit = intersectAABB(point_local, light_direction_local, u_boxMin, u_boxMax);
+    float tmax = point_hit.y; // Farthest intersection
 
     if (tmax <= 0.0)
         return 0.0;
 
-    // If the last step is not integer, we are not taking it to account yet
-    float transmittance_ = 1.0;
-    float tau_ = 0.0;
-    float mu_ = u_absorption_coeff;
-    float mu_s = u_scattering_coeff;
-    float step_ = tmax / float(u_light_steps);
-    float t_ = step_ * 0.5;
+    // TRAVERSAL LOOP
+    // Some variables initialization before entering the conditions
+    float point_transmittance = 1.0;        // Transmittance at sample point
+    float point_tau = 0.0;                  // Optical thickness at sample point
+    vec4 point_color = vec4(0.0);           // Initialize resulting point color
+    float point_mu_a = u_absorption_coeff;  // Absorption coefficient at sample point
+    float point_mu_s = u_scattering_coeff;  // Scattering coefficient at sample point
+    // If the last step is not integer, we are not taking it to account
+    float light_step = tmax / float(u_light_steps); 
+    float point_t = light_step * 0.5;
 
-    // For every step...
-    for (int i = 0; i < u_light_steps && transmittance_ > 0.0001; i++)
+    // For every step and while transmittance is not close to zero...
+    for (int i = 0; i < u_light_steps && point_transmittance > 0.0001; i++)
     {
+        // 3. COMPUTE THE OPTICAL THICKNESS
+        vec3 p = point_local + light_direction_local * point_t;
+        // If heterogeneous, absorption and scattering coefficients change...
         if (u_absorption_type == 1) {
-            vec3 p = sample_ + Ldir_local * t_;
-            float density_ = max(0.0, snoise(p * u_noise_freq));
-            mu_ = density_ * u_density_scale;
-            mu_s = density_ * u_scattering_coeff;
+            float point_density = max(0.0, snoise(p * u_noise_freq));
+            point_mu_a = point_density * u_density_scale;
+            point_mu_s = point_density * u_scattering_coeff;
         }
+        // Else if we have a 3D texture...
         else if (u_absorption_type == 2) {
-            vec3 p = sample_ + Ldir_local * t_;
             vec3 texture_pos_ = (p + vec3(1.0)) / 2.0;
-            float density_ = texture(u_texture, texture_pos_).r;
-            mu_ = density_ * u_density_scale;
-            mu_ = density_ * u_scattering_coeff;
+            float point_density = texture(u_texture, texture_pos_).r;
+            point_mu_a = point_density * u_density_scale;
+            point_mu_s = point_density * u_scattering_scale;
         }
+        // 4. COMPUTE THE TRANSMITTANCE
+        float point_mu_t = point_mu_a + point_mu_s;
+        point_tau += point_mu_t * light_step;
+        point_transmittance = exp(-point_tau);
 
-        float mu_t = mu_ + mu_s;
+        // UPDATE POINT COLOR (WITHOUT RECURSIVE IN-SCATTERING)
+        point_color += vec4(point_mu_t * u_color.rgb * point_transmittance * light_step, 1.0);
 
-        tau_ += mu_t * step_;
-        transmittance_ = exp(-tau_);
-        t_ += step_;
+        point_t += light_step;
     }
 
-    return transmittance_;
+    //point_color.rgb += u_light_color.rgb * u_light_intensity * point_transmittance;
+
+    return point_transmittance;
 }
 
 /// MAIN FUNCTION
@@ -180,8 +193,8 @@ void main()
     float tau = 0.0;                   // Optical thickness is initially zero
     vec4 color = vec4(0.0);            // Initialize resulting color
     vec4 emitted_color = u_color;      // Emmited light color
-    float mu = u_absorption_coeff;     // Absorption coefficient at each point
-    float mu_s = u_scattering_coeff;
+    float mu_a = u_absorption_coeff;   // Absorption coefficient at each point
+    float mu_s = u_scattering_coeff;   // Scattering coefficient at each point
     float step_size = u_step_size;     // Traversal loop step size
     float t = tnear + step_size * 0.5; // Start from the closest intersection
 
@@ -189,33 +202,38 @@ void main()
     while (t < tfar && transmittance > 0.0001) {
         // 3. COMPUTE THE OPTICAL THICKNESS
         vec3 sample_pos = origin_local + direction_local * t;
-        // If heterogeneous, absorption coefficient changes...
+        // If heterogeneous, absorption and scattering coefficients change...
         if (u_absorption_type == 1) {
             float density = max(0.0, snoise(sample_pos * u_noise_freq));
-            mu = density * u_density_scale;
+            mu_a = density * u_density_scale;
+            mu_s = density * u_scattering_scale;
         }
         // Else if we have a 3D texture...
         else if (u_absorption_type == 2) {
             vec3 texture_pos = (sample_pos + vec3(1.0)) / 2.0;
             float density = texture(u_texture, texture_pos).r;
-            mu = density * u_density_scale;
+            mu_a = density * u_density_scale;
+            mu_s = density * u_scattering_scale;
         }
-        float mu_t = mu + mu_s;
-        tau += mu_t * step_size;
         // 4. COMPUTE THE TRANSMITTANCE
+        float mu_t = mu_a + mu_s; // Total extinction coefficient
+        tau += mu_t * step_size;
         transmittance = exp(-tau);
 
         // In-scattering
-        float transmittance_scatt = computeLightTransmittance(sample_pos);
+        //vec4 scattered_light_color = computeInScatteredLight(sample_pos);
         vec3 Li = u_light_color.rgb * u_light_intensity;
+        float transmittance_scatt = computeInScatteredLight(sample_pos);
         vec3 Ls = Li * transmittance_scatt;
+        //vec4 Li = scattered_light_color;
 
         // Phase function (isotropic)
         float phase = 1.0 / (4.0 * 3.14159265);
+        //vec4 Ls = phase * Li;
         Ls *= phase;
 
         // UPDATE COLOR (FULL MODEL)
-        color += vec4((mu * emitted_color.rgb + mu_s * Ls) * transmittance * step_size, 1.0);
+        color += vec4((mu_t * emitted_color.rgb + mu_s * Ls.rgb) * transmittance * step_size, 1.0);
 
         t += step_size;
     }

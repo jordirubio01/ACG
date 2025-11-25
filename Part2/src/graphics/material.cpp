@@ -177,6 +177,7 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->step_size = 0.015f;
 	this->noise_freq = 4.0f;
 	this->density_scale = 1.0f;
+	this->scattering_scale = 1.0f;
 }
 
 VolumeMaterial::~VolumeMaterial()
@@ -205,6 +206,7 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 	this->shader->setUniform("u_step_size", this->step_size);
 	this->shader->setUniform("u_noise_freq", this->noise_freq);
 	this->shader->setUniform("u_density_scale", this->density_scale);
+	this->shader->setUniform("u_scattering_scale", this->scattering_scale);
 	// Add the texture if it exists
 	if (this->texture) {
 		this->shader->setUniform("u_texture", this->texture, 0);
@@ -257,12 +259,18 @@ void VolumeMaterial::renderInMenu()
 	// Step length (always displayed)
 	ImGui::SliderFloat("Step Length", (float*)&this->step_size, 0.01f, 0.02f);
 	// Homogeneous GUI
-	if (this->absorption_type==0) ImGui::SliderFloat("Absorption Coefficient", (float*)&this->absorption_coeff, 0.0f, 5.0f);
+	if (this->absorption_type == 0) {
+		ImGui::SliderFloat("Absorption Coefficient", (float*)&this->absorption_coeff, 0.0f, 5.0f);
+		if (this->shader_type == 2) ImGui::SliderFloat("Scattering Coefficient", (float*)&this->scattering_coeff, 0.0f, 5.0f);
+	}
 	// Heterogeneous GUI
-	else ImGui::SliderFloat("Density Scale", (float*)&this->density_scale, 0.0f, 10.0f);
-	if (this->absorption_type==1) ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 10.0f);
+	else {
+		ImGui::SliderFloat("Absorption Scale", (float*)&this->density_scale, 0.0f, 10.0f);
+		if (this->shader_type == 2) ImGui::SliderFloat("Scattering Scale", (float*)&this->scattering_scale, 0.0f, 10.0f);
+	}
+	if (this->absorption_type == 1) ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 10.0f);
 	// Emission-Absorption extra parameter (emitted color)
-	if (this->shader_type!=0) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
+	if (this->shader_type != 0) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
 }
 
 void VolumeMaterial::loadVDB(std::string file_path)

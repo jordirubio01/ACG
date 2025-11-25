@@ -77,6 +77,7 @@ public:
 	float step_size;
 	float noise_freq;
 	float density_scale;
+	float scattering_scale;
 
 	VolumeMaterial(glm::vec4 color = glm::vec4(0.f));
 	~VolumeMaterial();
