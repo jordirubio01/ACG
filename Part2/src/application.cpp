@@ -43,7 +43,7 @@ void Application::init(GLFWwindow* window)
     static_cast<VolumeMaterial*>(example3->material)->loadVDB("res/textures/bunny_cloud.vdb");
 
     Light* example_light = new Light();
-    example_light->model = glm::translate(example_light->model, glm::vec3(3.f, 0.f, 0.f));
+    example_light->model = glm::translate(example_light->model, glm::vec3(-5.0f, 8.0f, 12.0f));
     this->node_list.push_back(example_light);
     this->light_list.push_back(example_light);
 

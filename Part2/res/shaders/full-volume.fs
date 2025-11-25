@@ -111,7 +111,7 @@ float snoise(vec3 v){
   return 42.0 * dot( m*m, vec4( dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3) ) );
 }
 
-// FUNCTION USED FOR SECOND RAY MARCHING
+/// FUNCTION USED FOR SECOND RAY MARCHING
 vec3 computeLi(vec3 point_local)
 {
     // 1. INITIALIZE RAY (FROM POINT TO LIGHT)
@@ -135,8 +135,7 @@ vec3 computeLi(vec3 point_local)
     float point_t = light_step * 0.5;
 
     // For every step and while transmittance is not close to zero...
-    for (int i = 0; i < u_light_steps && point_transmittance > 0.0001; i++)
-    {
+    while (point_t < tmax && point_transmittance > 0.0001) {
         // 3. COMPUTE THE OPTICAL THICKNESS
         vec3 p = point_local + light_direction_local * point_t;
         // If heterogeneous, absorption and scattering coefficients change...
@@ -163,11 +162,19 @@ vec3 computeLi(vec3 point_local)
     // Return the scattered light for this point and direction
     return u_light_color.rgb * u_light_intensity * point_transmittance;
 }
-float phaseHG(float cosTheta, float g)
+
+///  HENYEY-GREENSTEIN PHASE FUNCTION
+float phaseHG(vec3 sample_p)
 {
-    float numerator = 1.0 - (g * g);
-    float denominator = pow(1.0 + (g * g) - 2.0 * g * cosTheta, 1.5);
-    return numerator / (4.0 * 3.14159265 * denominator);
+    vec3 view_dir = normalize(u_local_camera_pos - sample_p);
+    vec3 light_dir = normalize(u_local_light_position - sample_p);
+    float cos_theta = dot(view_dir, light_dir);
+
+    float numerator = 1.0 - u_g * u_g;
+    float denominator = 4.0 * 3.14159265 * pow(1.0 + u_g * u_g - 2.0 * u_g * cos_theta, 1.5);
+    float phasehg = numerator / denominator;
+
+    return phasehg;
 }
 
 /// MAIN FUNCTION
@@ -224,14 +231,8 @@ void main()
         // IN-SCATTERING TERM
         vec3 Li = computeLi(sample_pos);
 
-        // Phase function (Heyney-Greenstein) --> if g = 0, isotropic
-        vec3 view_dir = normalize(origin_local - sample_pos);
-        vec3 light_dir = normalize(u_local_light_position - sample_pos);
-        float cos_theta = dot(view_dir, light_dir);
-
-        float numerator = 1.0 - u_g * u_g;
-        float denominator = 4.0 * 3.14159265 * pow(1.0 + u_g * u_g - 2.0 * u_g * cos_theta, 1.5);
-        float phase = numerator / denominator;
+        // Phase function (Heyney-Greenstein) (if g = 0, isotropic)
+        float phase = phaseHG(sample_pos);
 
         // In-scattered light at sample position
         vec3 Ls = phase * Li;

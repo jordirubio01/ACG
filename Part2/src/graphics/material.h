@@ -67,8 +67,6 @@ public:
 	Shader* absorption_shader = NULL;
 	Shader* emission_absorption_shader = NULL;
 	Shader* full_volume_shader = NULL;
-	Shader* full_volume_isotropic_shader = NULL;
-	//Shader* full_volume_ = NULL;
 
 	float absorption_coeff;
 	float scattering_coeff;

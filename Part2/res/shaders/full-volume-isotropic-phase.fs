@@ -27,8 +27,8 @@ uniform vec3 u_light_position;    // Light position (world coords)
 uniform int u_light_steps;        // Number of steps for light ray marching
 uniform float u_g;                // g parameter for Henyey-Greenstein phase function
      
-
 out vec4 FragColor;
+
 /// FUNCTION USED FOR INTERSECTION
 // adapted from intersectCube in https://github.com/evanw/webgl-path-tracing/blob/master/webgl-path-tracing.js
 // compute the near and far intersections of the cube (stored in the x and y components) using the slab method
@@ -112,7 +112,7 @@ float snoise(vec3 v){
 }
 
 
-// FUNCTION USED FOR SECOND RAY MARCHING
+/// FUNCTION USED FOR SECOND RAY MARCHING
 vec3 computeLi(vec3 point_local)
 {
     // 1. INITIALIZE RAY (FROM POINT TO LIGHT)
@@ -136,8 +136,7 @@ vec3 computeLi(vec3 point_local)
     float point_t = light_step * 0.5;
 
     // For every step and while transmittance is not close to zero...
-    for (int i = 0; i < u_light_steps && point_transmittance > 0.0001; i++)
-    {
+    while (point_t < tmax && point_transmittance > 0.0001) {
         // 3. COMPUTE THE OPTICAL THICKNESS
         vec3 p = point_local + light_direction_local * point_t;
         // If heterogeneous, absorption and scattering coefficients change...
@@ -163,12 +162,6 @@ vec3 computeLi(vec3 point_local)
 
     // Return the scattered light for this point and direction
     return u_light_color.rgb * u_light_intensity * point_transmittance;
-}
-float phaseHG(float cosTheta, float g)
-{
-    float numerator = 1.0 - g * g;
-    float denominator = pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5);
-    return numerator / (4.0 * 3.14159265 * denominator);
 }
 
 /// MAIN FUNCTION

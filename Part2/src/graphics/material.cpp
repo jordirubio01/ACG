@@ -168,7 +168,6 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
 	this->emission_absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/emission-absorption.fs");
 	this->full_volume_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/full-volume.fs");
-	this->full_volume_isotropic_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/full-volume.fs");
 	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs"); // Current shader
 	this->absorption_coeff = 0.5f;
 	this->scattering_coeff = 0.5f;
@@ -231,12 +230,14 @@ void VolumeMaterial::render(Mesh* mesh, glm::mat4 model, Camera* camera)
 		setUniforms(camera, model);
 
 		// Set light uniforms
+		if (num_lights > 0) {
+			Light* light = Application::instance->light_list[0];
+			light->setUniforms(this->shader, model);
+		}
 		//for (int nlight = 0; nlight < num_lights; nlight++) {
 		//	Light* light = Application::instance->light_list[nlight];
 		//	light->setUniforms(this->shader, model);
 		//}
-		Light* light = Application::instance->light_list[0];
-		light->setUniforms(this->shader, model);
 
 		// Do the draw call
 		mesh->render(GL_TRIANGLES);
@@ -256,7 +257,7 @@ void VolumeMaterial::renderInMenu()
 		// Change used shader
 		if (this->shader_type == 0) this->shader = this->absorption_shader;
 		else if (this->shader_type == 1) this->shader = this->emission_absorption_shader;
-		else this->shader = this->full_volume_isotropic_shader;
+		else this->shader = this->full_volume_shader;
 	}
 	// Homogeneous or heterogeneous selector
 	//const char* types[] = { "Homogeneous", "Heterogeneous" };
@@ -278,8 +279,10 @@ void VolumeMaterial::renderInMenu()
 	// Emission-Absorption extra parameter (emitted color)
 	if (this->shader_type != 0) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
 	// Scattering extra parameter (light steps)
-	if (this->shader_type == 2) ImGui::SliderInt("Light Steps", (int*)&this->light_steps, 2, 32);
-	if (this->shader_type == 2) ImGui::SliderFloat("Factor g", (float*)&this->g_phase, -1.0f, 1.0f);
+	if (this->shader_type == 2) {
+		ImGui::SliderInt("Light Steps", (int*)&this->light_steps, 2, 32);
+		ImGui::SliderFloat("Factor g", (float*)&this->g_phase, -1.0f, 1.0f);
+	}
 }
 
 void VolumeMaterial::loadVDB(std::string file_path)
