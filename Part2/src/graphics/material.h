@@ -75,6 +75,7 @@ public:
 	int shader_type;
 	int absorption_type;
 	float step_size;
+	int light_steps;
 	float noise_freq;
 	float density_scale;
 	float scattering_scale;

@@ -175,6 +175,7 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->shader_type = 0;
 	this->absorption_type = 0;
 	this->step_size = 0.015f;
+	this->light_steps = 2;
 	this->noise_freq = 4.0f;
 	this->density_scale = 1.0f;
 	this->scattering_scale = 1.0f;
@@ -204,6 +205,7 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 	// Absorption type, ray marching step size, heterogeneous noise freq and density scale
 	this->shader->setUniform("u_absorption_type", this->absorption_type);
 	this->shader->setUniform("u_step_size", this->step_size);
+	this->shader->setUniform("u_light_steps", light_steps);
 	this->shader->setUniform("u_noise_freq", this->noise_freq);
 	this->shader->setUniform("u_density_scale", this->density_scale);
 	this->shader->setUniform("u_scattering_scale", this->scattering_scale);
@@ -227,10 +229,12 @@ void VolumeMaterial::render(Mesh* mesh, glm::mat4 model, Camera* camera)
 		setUniforms(camera, model);
 
 		// Set light uniforms
-		for (int nlight = 0; nlight < num_lights; nlight++) {
-			Light* light = Application::instance->light_list[nlight];
-			light->setUniforms(this->shader, model);
-		}
+		//for (int nlight = 0; nlight < num_lights; nlight++) {
+		//	Light* light = Application::instance->light_list[nlight];
+		//	light->setUniforms(this->shader, model);
+		//}
+		Light* light = Application::instance->light_list[0];
+		light->setUniforms(this->shader, model);
 
 		// Do the draw call
 		mesh->render(GL_TRIANGLES);
@@ -271,6 +275,8 @@ void VolumeMaterial::renderInMenu()
 	if (this->absorption_type == 1) ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 10.0f);
 	// Emission-Absorption extra parameter (emitted color)
 	if (this->shader_type != 0) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
+	// Scattering extra parameter (light steps)
+	if (this->shader_type == 2) ImGui::SliderInt("Light Steps", (int*)&this->light_steps, 2, 10);
 }
 
 void VolumeMaterial::loadVDB(std::string file_path)

@@ -23,8 +23,8 @@ uniform sampler3D u_texture;      // Texture of the material
 uniform float u_light_intensity;  // Intensity of the light to be scattered
 uniform vec4 u_light_color;       // Color
 uniform vec3 u_local_light_position; // Light position (local coords)
-uniform vec3 u_light_position;    // Light position (world coords) --> no s'utilitza, però el deixo per si de cas perque està a setUniforms de light.cpp
-uniform int u_light_steps;    // Number of steps for light marching
+uniform vec3 u_light_position;    // Light position (world coords)
+uniform int u_light_steps;        // Number of steps for light ray marching
      
 
 out vec4 FragColor;
@@ -112,7 +112,7 @@ float snoise(vec3 v){
 
 
 // FUNCTION USED FOR SECOND RAY MARCHING
-float computeInScatteredLight(vec3 point_local)
+vec3 computeLi(vec3 point_local)
 {
     // 1. INITIALIZE RAY (FROM POINT TO LIGHT)
     vec3 light_direction_local = normalize(u_local_light_position - point_local);
@@ -122,13 +122,12 @@ float computeInScatteredLight(vec3 point_local)
     float tmax = point_hit.y; // Farthest intersection
 
     if (tmax <= 0.0)
-        return 0.0;
+        return vec3(0.0);
 
     // TRAVERSAL LOOP
     // Some variables initialization before entering the conditions
     float point_transmittance = 1.0;        // Transmittance at sample point
     float point_tau = 0.0;                  // Optical thickness at sample point
-    vec4 point_color = vec4(0.0);           // Initialize resulting point color
     float point_mu_a = u_absorption_coeff;  // Absorption coefficient at sample point
     float point_mu_s = u_scattering_coeff;  // Scattering coefficient at sample point
     // If the last step is not integer, we are not taking it to account
@@ -144,7 +143,7 @@ float computeInScatteredLight(vec3 point_local)
         if (u_absorption_type == 1) {
             float point_density = max(0.0, snoise(p * u_noise_freq));
             point_mu_a = point_density * u_density_scale;
-            point_mu_s = point_density * u_scattering_coeff;
+            point_mu_s = point_density * u_scattering_scale;
         }
         // Else if we have a 3D texture...
         else if (u_absorption_type == 2) {
@@ -158,15 +157,11 @@ float computeInScatteredLight(vec3 point_local)
         point_tau += point_mu_t * light_step;
         point_transmittance = exp(-point_tau);
 
-        // UPDATE POINT COLOR (WITHOUT RECURSIVE IN-SCATTERING)
-        point_color += vec4(point_mu_t * u_color.rgb * point_transmittance * light_step, 1.0);
-
         point_t += light_step;
     }
 
-    //point_color.rgb += u_light_color.rgb * u_light_intensity * point_transmittance;
-
-    return point_transmittance;
+    // Return the scattered light for this point and direction
+    return u_light_color.rgb * u_light_intensity * point_transmittance;
 }
 
 /// MAIN FUNCTION
@@ -189,14 +184,14 @@ void main()
 
     // TRAVERSAL LOOP
     // Some variables initialization before entering the conditions
-    float transmittance = 1.0;         // Initially there is no absorption
-    float tau = 0.0;                   // Optical thickness is initially zero
-    vec4 color = vec4(0.0);            // Initialize resulting color
-    vec4 emitted_color = u_color;      // Emmited light color
-    float mu_a = u_absorption_coeff;   // Absorption coefficient at each point
-    float mu_s = u_scattering_coeff;   // Scattering coefficient at each point
-    float step_size = u_step_size;     // Traversal loop step size
-    float t = tnear + step_size * 0.5; // Start from the closest intersection
+    float transmittance = 1.0;             // Initially there is no absorption
+    float tau = 0.0;                       // Optical thickness is initially zero
+    vec4 color = vec4(0.0, 0.0, 0.0, 1.0); // Initialize resulting color
+    vec4 emitted_color = u_color;          // Emmited light color
+    float mu_a = u_absorption_coeff;       // Absorption coefficient at each point
+    float mu_s = u_scattering_coeff;       // Scattering coefficient at each point
+    float step_size = u_step_size;         // Traversal loop step size
+    float t = tnear + step_size * 0.5;     // Start from the closest intersection
 
     // While t is inside the volume and transmittance is not close to zero...
     while (t < tfar && transmittance > 0.0001) {
@@ -220,20 +215,15 @@ void main()
         tau += mu_t * step_size;
         transmittance = exp(-tau);
 
-        // In-scattering
-        //vec4 scattered_light_color = computeInScatteredLight(sample_pos);
-        vec3 Li = u_light_color.rgb * u_light_intensity;
-        float transmittance_scatt = computeInScatteredLight(sample_pos);
-        vec3 Ls = Li * transmittance_scatt;
-        //vec4 Li = scattered_light_color;
-
+        // IN-SCATTERING TERM
+        vec3 Li = computeLi(sample_pos);
         // Phase function (isotropic)
         float phase = 1.0 / (4.0 * 3.14159265);
-        //vec4 Ls = phase * Li;
-        Ls *= phase;
+        // In-scattered light at sample position
+        vec3 Ls = phase * Li;
 
         // UPDATE COLOR (FULL MODEL)
-        color += vec4((mu_t * emitted_color.rgb + mu_s * Ls.rgb) * transmittance * step_size, 1.0);
+        color.rgb += (mu_t * emitted_color.rgb + mu_s * Ls) * transmittance * step_size;
 
         t += step_size;
     }

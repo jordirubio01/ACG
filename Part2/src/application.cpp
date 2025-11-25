@@ -44,7 +44,8 @@ void Application::init(GLFWwindow* window)
 
     Light* example_light = new Light();
     example_light->model = glm::translate(example_light->model, glm::vec3(3.f, 0.f, 0.f));
-    node_list.push_back(example_light);
+    this->node_list.push_back(example_light);
+    this->light_list.push_back(example_light);
 
 
 }
