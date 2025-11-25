@@ -10,6 +10,7 @@ Light::Light(glm::vec3 position, float intensity, glm::vec4 color)
 	this->model = glm::translate(this->model, position);
 	
 	this->intensity = intensity;
+	this->light_steps = 0.01f;
 
 	// Create a debug sphere mesh
 	this->mesh = Mesh::Get("res/meshes/sphere.obj");
@@ -31,6 +32,7 @@ void Light::setUniforms(Shader* shader, const glm::mat4& model)
 	shader->setUniform("u_light_color", this->material->color);
 	shader->setUniform("u_light_position", position);
 	shader->setUniform("u_local_light_position", local_pos);
+	shader->setUniform("u_light_steps", light_steps);
 }
 
 void Light::renderInMenu()
@@ -43,6 +45,7 @@ void Light::renderInMenu()
 	ImGuizmo::RecomposeMatrixFromComponents(matrixTranslation, matrixRotation, matrixScale, glm::value_ptr(this->model));
 
 	ImGui::SliderFloat("Intensity", (float*)&this->intensity, 0.f, 50.f);
+	ImGui::SliderFloat("Light Steps", (float*)&this->light_steps, 0.01f, 1.f);
 	
 	material->renderInMenu();
 }

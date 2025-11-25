@@ -21,10 +21,9 @@ uniform sampler3D u_texture;      // Texture of the material
 
 uniform float u_light_intensity;  // Intensity of the light to be scattered
 uniform vec4 u_light_color;       // Color
-unifrom vec3 u_local_light_position; // Light position (local coords)
 uniform vec3 u_light_position;    // Light position (world coords)
+uniform vec3 u_local_light_position; // Light position (local coords)
 uniform int u_light_steps;        // Number of steps for light marching
-
 
 out vec4 FragColor;
 
@@ -158,7 +157,7 @@ void main()
         // 4. COMPUTE THE TRANSMITTANCE
         transmittance = exp(-tau);
         // UPDATE COLOR
-        color += vec4(mu * emitted_color.rgb * transmittance * step_size, 1.0);
+        color += vec4((mu * emitted_color.rgb) * transmittance * step_size, 1.0);
 
         t += step_size;
     }

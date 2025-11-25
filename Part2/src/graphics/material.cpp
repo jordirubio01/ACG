@@ -168,6 +168,7 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
 	this->emission_absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/emission-absorption.fs");
 	this->full_volume_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/full-volume.fs");
+	this->full_volume_isotropic_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/full-volume-isotropic-phase.fs");
 	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs"); // Current shader
 	this->absorption_coeff = 0.5f;
 	this->scattering_coeff = 0.5f;
@@ -213,6 +214,7 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 void VolumeMaterial::render(Mesh* mesh, glm::mat4 model, Camera* camera)
 {
 	if (mesh && this->shader) {
+		int num_lights = (int)Application::instance->light_list.size();
 		// Enable shader
 		this->shader->enable();
 
@@ -221,6 +223,12 @@ void VolumeMaterial::render(Mesh* mesh, glm::mat4 model, Camera* camera)
 		this->shader->setUniform("u_boxMin", mesh->aabb_min);
 		this->shader->setUniform("u_boxMax", mesh->aabb_max);
 		setUniforms(camera, model);
+
+		// Set light uniforms
+		for (int nlight = 0; nlight < num_lights; nlight++) {
+			Light* light = Application::instance->light_list[nlight];
+			light->setUniforms(this->shader, model);
+		}
 
 		// Do the draw call
 		mesh->render(GL_TRIANGLES);
@@ -234,12 +242,13 @@ void VolumeMaterial::renderInMenu()
 	ImGui::Text("Material Type: %s", std::string("Volume").c_str());
 
 	// Absorption shader or Emission-absorption shader
-	const char* shader_types[] = { "Absorption", "Emission-Absorption" };
+	const char* shader_types[] = { "Absorption", "Emission-Absorption", "Full-Volume"};
 	if (ImGui::Combo("Shader Type", (int*)&this->shader_type, shader_types, IM_ARRAYSIZE(shader_types)))
 	{
 		// Change used shader
 		if (this->shader_type == 0) this->shader = this->absorption_shader;
-		else this->shader = this->emission_absorption_shader;
+		else if (this->shader_type == 1) this->shader = this->emission_absorption_shader;
+		else this->shader = this->full_volume_isotropic_shader;
 	}
 	// Homogeneous or heterogeneous selector
 	//const char* types[] = { "Homogeneous", "Heterogeneous" };
@@ -253,7 +262,7 @@ void VolumeMaterial::renderInMenu()
 	else ImGui::SliderFloat("Density Scale", (float*)&this->density_scale, 0.0f, 10.0f);
 	if (this->absorption_type==1) ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 10.0f);
 	// Emission-Absorption extra parameter (emitted color)
-	if (this->shader_type==1) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
+	if (this->shader_type!=0) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
 }
 
 void VolumeMaterial::loadVDB(std::string file_path)

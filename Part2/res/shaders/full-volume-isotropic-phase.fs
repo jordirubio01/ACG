@@ -23,7 +23,7 @@ uniform float u_light_intensity;  // Intensity of the light to be scattered
 uniform vec4 u_light_color;       // Color
 uniform vec3 u_local_light_position; // Light position (local coords)
 uniform vec3 u_light_position;    // Light position (world coords) --> no s'utilitza, però el deixo per si de cas perque està a setUniforms de light.cpp
-uniform int u_num_light_steps;    // Number of steps for light marching
+uniform int u_light_steps;    // Number of steps for light marching
      
 
 out vec4 FragColor;
@@ -110,7 +110,7 @@ float snoise(vec3 v){
 }
 
 
-// SECOND RAY MARCHING --> he vist que per en GLSL es millor no repetir noms de variables tot i que estiguin dins la funció 
+// FUNCTION USED FOR SECOND RAY MARCHING (we better not repeat variable names)
 float computeLightTransmittance(vec3 sample_)
 {
     vec3 Ldir_local = normalize(u_local_light_position - sample_);
@@ -121,29 +121,31 @@ float computeLightTransmittance(vec3 sample_)
     if (tmax <= 0.0)
         return 0.0;
 
-    // si el l'ultim pas no queda enter no s'està tenint encara en compte
-    float step_ = tmax / float(u_num_light_steps);
-    float t_ = step_ * 0.5;
-    float tau_ = 0.0;
+    // If the last step is not integer, we are not taking it to account yet
     float transmittance_ = 1.0;
+    float tau_ = 0.0;
+    float mu_ = u_absorption_coeff;
+    float mu_s = u_scattering_coeff;
+    float step_ = tmax / float(u_light_steps);
+    float t_ = step_ * 0.5;
 
-    //potser es millor fer un while pero com que estem iterant per nombre de steps de moment deixo for
-    for (int i = 0; i < u_num_light_steps && transmittance_ > 0.0001; i++)
+    // For every step...
+    for (int i = 0; i < u_light_steps && transmittance_ > 0.0001; i++)
     {
-        vec3 p = sample_ + Ldir_local * t_;
-        float mu_ = u_absorption_coeff;
-
         if (u_absorption_type == 1) {
+            vec3 p = sample_ + Ldir_local * t_;
             float density_ = max(0.0, snoise(p * u_noise_freq));
             mu_ = density_ * u_density_scale;
+            mu_s = density_ * u_scattering_coeff;
         }
         else if (u_absorption_type == 2) {
+            vec3 p = sample_ + Ldir_local * t_;
             vec3 texture_pos_ = (p + vec3(1.0)) / 2.0;
             float density_ = texture(u_texture, texture_pos_).r;
             mu_ = density_ * u_density_scale;
+            mu_ = density_ * u_scattering_coeff;
         }
 
-        float mu_s = u_scattering_coeff;
         float mu_t = mu_ + mu_s;
 
         tau_ += mu_t * step_;
@@ -179,45 +181,41 @@ void main()
     vec4 color = vec4(0.0);            // Initialize resulting color
     vec4 emitted_color = u_color;      // Emmited light color
     float mu = u_absorption_coeff;     // Absorption coefficient at each point
+    float mu_s = u_scattering_coeff;
     float step_size = u_step_size;     // Traversal loop step size
     float t = tnear + step_size * 0.5; // Start from the closest intersection
 
-    // While t is inside the volume and optical thickness is not too high...
+    // While t is inside the volume and transmittance is not close to zero...
     while (t < tfar && transmittance > 0.0001) {
         // 3. COMPUTE THE OPTICAL THICKNESS
         vec3 sample_pos = origin_local + direction_local * t;
         // If heterogeneous, absorption coefficient changes...
-        if (u_absorption_type == 1) { // S'HA DE CANVIAR, NOMÉS ÉS UNA PROVA
+        if (u_absorption_type == 1) {
             float density = max(0.0, snoise(sample_pos * u_noise_freq));
             mu = density * u_density_scale;
         }
         // Else if we have a 3D texture...
-        else if (u_absorption_type == 2) { // S'HA DE CANVIAR, NOMÉS ÉS UNA PROVA
+        else if (u_absorption_type == 2) {
             vec3 texture_pos = (sample_pos + vec3(1.0)) / 2.0;
             float density = texture(u_texture, texture_pos).r;
             mu = density * u_density_scale;
         }
-
-        float mu_s = u_scattering_coeff;
         float mu_t = mu + mu_s;
-
         tau += mu_t * step_size;
+        // 4. COMPUTE THE TRANSMITTANCE
         transmittance = exp(-tau);
 
-        vec3 Le = u_color.rgb;  
-
-        // IN SCATTERING
+        // In-scattering
         float transmittance_scatt = computeLightTransmittance(sample_pos);
         vec3 Li = u_light_color.rgb * u_light_intensity;
         vec3 Ls = Li * transmittance_scatt;
 
-        // PHASE FUNCTION (ISOTROPIC)
+        // Phase function (isotropic)
         float phase = 1.0 / (4.0 * 3.14159265);
         Ls *= phase;
 
-        // FULL MODEL
-        color.rgb += (mu * Le + mu_s * Ls) * transmittance * step_size;
-        color.a = 1.0;
+        // UPDATE COLOR (FULL MODEL)
+        color += vec4((mu * emitted_color.rgb + mu_s * Ls) * transmittance * step_size, 1.0);
 
         t += step_size;
     }
