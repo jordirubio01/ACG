@@ -168,7 +168,7 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs");
 	this->emission_absorption_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/emission-absorption.fs");
 	this->full_volume_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/full-volume.fs");
-	this->full_volume_isotropic_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/full-volume-isotropic-phase.fs");
+	this->full_volume_isotropic_shader = Shader::Get("res/shaders/basic.vs", "res/shaders/full-volume.fs");
 	this->shader = Shader::Get("res/shaders/basic.vs", "res/shaders/absorption.fs"); // Current shader
 	this->absorption_coeff = 0.5f;
 	this->scattering_coeff = 0.5f;
@@ -179,6 +179,7 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->noise_freq = 4.0f;
 	this->density_scale = 1.0f;
 	this->scattering_scale = 1.0f;
+	this->g_phase = 0.0f;
 }
 
 VolumeMaterial::~VolumeMaterial()
@@ -209,6 +210,7 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 	this->shader->setUniform("u_noise_freq", this->noise_freq);
 	this->shader->setUniform("u_density_scale", this->density_scale);
 	this->shader->setUniform("u_scattering_scale", this->scattering_scale);
+	this->shader->setUniform("u_g", this->g_phase);
 	// Add the texture if it exists
 	if (this->texture) {
 		this->shader->setUniform("u_texture", this->texture, 0);
@@ -276,7 +278,8 @@ void VolumeMaterial::renderInMenu()
 	// Emission-Absorption extra parameter (emitted color)
 	if (this->shader_type != 0) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
 	// Scattering extra parameter (light steps)
-	if (this->shader_type == 2) ImGui::SliderInt("Light Steps", (int*)&this->light_steps, 2, 10);
+	if (this->shader_type == 2) ImGui::SliderInt("Light Steps", (int*)&this->light_steps, 2, 32);
+	if (this->shader_type == 2) ImGui::SliderFloat("Factor g", (float*)&this->g_phase, -1.0f, 1.0f);
 }
 
 void VolumeMaterial::loadVDB(std::string file_path)

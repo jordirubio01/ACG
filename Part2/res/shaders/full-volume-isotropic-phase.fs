@@ -25,6 +25,7 @@ uniform vec4 u_light_color;       // Color
 uniform vec3 u_local_light_position; // Light position (local coords)
 uniform vec3 u_light_position;    // Light position (world coords)
 uniform int u_light_steps;        // Number of steps for light ray marching
+uniform float u_g;                // g parameter for Henyey-Greenstein phase function
      
 
 out vec4 FragColor;
@@ -163,6 +164,12 @@ vec3 computeLi(vec3 point_local)
     // Return the scattered light for this point and direction
     return u_light_color.rgb * u_light_intensity * point_transmittance;
 }
+float phaseHG(float cosTheta, float g)
+{
+    float numerator = 1.0 - g * g;
+    float denominator = pow(1.0 + g * g - 2.0 * g * cosTheta, 1.5);
+    return numerator / (4.0 * 3.14159265 * denominator);
+}
 
 /// MAIN FUNCTION
 void main()
@@ -217,8 +224,10 @@ void main()
 
         // IN-SCATTERING TERM
         vec3 Li = computeLi(sample_pos);
+
         // Phase function (isotropic)
         float phase = 1.0 / (4.0 * 3.14159265);
+
         // In-scattered light at sample position
         vec3 Ls = phase * Li;
 
