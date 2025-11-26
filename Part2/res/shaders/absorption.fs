@@ -141,11 +141,13 @@ void main()
         // While t is inside the volume and optical thickness is not too high...
         while (t < tfar && transmittance > 0.0001) {
             // 3. COMPUTE THE OPTICAL THICKNESS
+            // If heterogeneous, absorption coefficient changes...
             if (u_volume_type == 1) {
                 vec3 sample_pos = origin_local + direction_local * t;
                 float density = max(0.0, snoise(sample_pos * u_noise_freq));
                 mu = density * u_absorption_scale;
             }
+            // Else if we have a 3D texture...
             else {
                 vec3 sample_pos = origin_local + direction_local * t;
                 vec3 texture_pos = (sample_pos + vec3(1.0)) / 2;
