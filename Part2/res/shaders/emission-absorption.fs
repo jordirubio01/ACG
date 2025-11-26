@@ -12,10 +12,10 @@ uniform vec4 u_color;			  // Volume color (emmited light color)
 uniform vec4 u_bg_color;		  // Background color
 uniform float u_absorption_coeff; // Absorption coefficient
 
-uniform int u_absorption_type;    // 0 is homogeneous; 1 is heterogeneous
+uniform int u_volume_type;        // 0 is homogeneous; 1 is heterogeneous
 uniform float u_step_size;        // Step size for ray marching
 uniform float u_noise_freq;       // Frequency for noise sampling
-uniform float u_density_scale;    // Scales noise to absorption
+uniform float u_absorption_scale; // Scales noise to absorption
 uniform sampler3D u_texture;      // Texture of the material
 
 out vec4 FragColor;
@@ -133,17 +133,17 @@ void main()
     while (t < tfar && transmittance > 0.0001) {
         // 3. COMPUTE THE OPTICAL THICKNESS
         // If heterogeneous, absorption coefficient changes...
-        if (u_absorption_type == 1){ // S'HA DE CANVIAR, NOMÉS ÉS UNA PROVA
+        if (u_volume_type == 1){
             vec3 sample_pos = origin_local + direction_local * t;
             float density = max(0.0, snoise(sample_pos * u_noise_freq));
-            mu = density * u_density_scale;
+            mu = density * u_absorption_scale;
         }
         // Else if we have a 3D texture...
-        else if (u_absorption_type == 2){ // S'HA DE CANVIAR, NOMÉS ÉS UNA PROVA
+        else if (u_volume_type == 2){
             vec3 sample_pos = origin_local + direction_local * t;
             vec3 texture_pos = (sample_pos + vec3(1.0)) / 2;
             float density = texture(u_texture, texture_pos).r;
-            mu = density * u_density_scale;
+            mu = density * u_absorption_scale;
         }
         tau += step_size * mu;
         // 4. COMPUTE THE TRANSMITTANCE

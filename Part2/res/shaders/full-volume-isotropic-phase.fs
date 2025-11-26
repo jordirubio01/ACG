@@ -13,10 +13,10 @@ uniform vec4 u_bg_color;		  // Background color
 uniform float u_absorption_coeff; // Absorption coefficient
 uniform float u_scattering_coeff; // Scattering coefficient
 
-uniform int u_absorption_type;    // 0 is homogeneous; 1 is heterogeneous
+uniform int u_volume_type;        // 0 is homogeneous; 1 is heterogeneous
 uniform float u_step_size;        // Step size for ray marching
 uniform float u_noise_freq;       // Frequency for noise sampling
-uniform float u_density_scale;    // Scales noise to absorption
+uniform float u_absorption_scale; // Scales noise to absorption
 uniform float u_scattering_scale; // Scales noise to scattering
 uniform sampler3D u_texture;      // Texture of the material
 
@@ -120,9 +120,9 @@ vec3 computeLi(vec3 point_local)
 
     // 2. COMPUTE INTERSECTION WITH THE VOLUME AUXILIARY GEOMETRY
     vec2 point_hit = intersectAABB(point_local, light_direction_local, u_boxMin, u_boxMax);
-    float tmax = point_hit.y; // Farthest intersection
+    float tmax = point_hit.y; // Farthest intersection (we use tmax not to repeat variable names)
 
-    if (tmax <= 0.0)
+    if (tmax <= 0.0) // If tmax is negative, there is no visible intersection
         return vec3(0.0);
 
     // TRAVERSAL LOOP
@@ -131,7 +131,7 @@ vec3 computeLi(vec3 point_local)
     float point_tau = 0.0;                  // Optical thickness at sample point
     float point_mu_a = u_absorption_coeff;  // Absorption coefficient at sample point
     float point_mu_s = u_scattering_coeff;  // Scattering coefficient at sample point
-    // If the last step is not integer, we are not taking it to account
+    // We compute a step so that we reach tmax without losing extra space
     float light_step = tmax / float(u_light_steps); 
     float point_t = light_step * 0.5;
 
@@ -140,16 +140,16 @@ vec3 computeLi(vec3 point_local)
         // 3. COMPUTE THE OPTICAL THICKNESS
         vec3 p = point_local + light_direction_local * point_t;
         // If heterogeneous, absorption and scattering coefficients change...
-        if (u_absorption_type == 1) {
+        if (u_volume_type == 1) {
             float point_density = max(0.0, snoise(p * u_noise_freq));
-            point_mu_a = point_density * u_density_scale;
+            point_mu_a = point_density * u_absorption_scale;
             point_mu_s = point_density * u_scattering_scale;
         }
         // Else if we have a 3D texture...
-        else if (u_absorption_type == 2) {
+        else if (u_volume_type == 2) {
             vec3 texture_pos_ = (p + vec3(1.0)) / 2.0;
             float point_density = texture(u_texture, texture_pos_).r;
-            point_mu_a = point_density * u_density_scale;
+            point_mu_a = point_density * u_absorption_scale;
             point_mu_s = point_density * u_scattering_scale;
         }
         // 4. COMPUTE THE TRANSMITTANCE
@@ -161,7 +161,9 @@ vec3 computeLi(vec3 point_local)
     }
 
     // Return the scattered light for this point and direction
-    return u_light_color.rgb * u_light_intensity * point_transmittance;
+    float dist = length(u_local_light_position - point_local);
+    float attenuation = 1.0 / (dist * dist + 1);
+    return u_light_color.rgb * u_light_intensity * attenuation * point_transmittance;
 }
 
 /// MAIN FUNCTION
@@ -198,16 +200,16 @@ void main()
         // 3. COMPUTE THE OPTICAL THICKNESS
         vec3 sample_pos = origin_local + direction_local * t;
         // If heterogeneous, absorption and scattering coefficients change...
-        if (u_absorption_type == 1) {
+        if (u_volume_type == 1) {
             float density = max(0.0, snoise(sample_pos * u_noise_freq));
-            mu_a = density * u_density_scale;
+            mu_a = density * u_absorption_scale;
             mu_s = density * u_scattering_scale;
         }
         // Else if we have a 3D texture...
-        else if (u_absorption_type == 2) {
+        else if (u_volume_type == 2) {
             vec3 texture_pos = (sample_pos + vec3(1.0)) / 2.0;
             float density = texture(u_texture, texture_pos).r;
-            mu_a = density * u_density_scale;
+            mu_a = density * u_absorption_scale;
             mu_s = density * u_scattering_scale;
         }
         // 4. COMPUTE THE TRANSMITTANCE

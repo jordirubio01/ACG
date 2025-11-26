@@ -71,11 +71,11 @@ public:
 	float absorption_coeff;
 	float scattering_coeff;
 	int shader_type;
-	int absorption_type;
+	int volume_type;
 	float step_size;
 	int light_steps;
 	float noise_freq;
-	float density_scale;
+	float absorption_scale;
 	float scattering_scale;
 	float g_phase;
 

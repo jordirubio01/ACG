@@ -172,11 +172,11 @@ VolumeMaterial::VolumeMaterial(glm::vec4 color)
 	this->absorption_coeff = 0.5f;
 	this->scattering_coeff = 0.5f;
 	this->shader_type = 0;
-	this->absorption_type = 0;
+	this->volume_type = 0;
 	this->step_size = 0.015f;
 	this->light_steps = 2;
 	this->noise_freq = 4.0f;
-	this->density_scale = 1.0f;
+	this->absorption_scale = 1.0f;
 	this->scattering_scale = 1.0f;
 	this->g_phase = 0.0f;
 }
@@ -203,11 +203,11 @@ void VolumeMaterial::setUniforms(Camera* camera, glm::mat4 model)
 	this->shader->setUniform("u_absorption_coeff", this->absorption_coeff);
 	this->shader->setUniform("u_scattering_coeff", this->scattering_coeff);
 	// Absorption type, ray marching step size, heterogeneous noise freq and density scale
-	this->shader->setUniform("u_absorption_type", this->absorption_type);
+	this->shader->setUniform("u_volume_type", this->volume_type);
 	this->shader->setUniform("u_step_size", this->step_size);
 	this->shader->setUniform("u_light_steps", light_steps);
 	this->shader->setUniform("u_noise_freq", this->noise_freq);
-	this->shader->setUniform("u_density_scale", this->density_scale);
+	this->shader->setUniform("u_absorption_scale", this->absorption_scale);
 	this->shader->setUniform("u_scattering_scale", this->scattering_scale);
 	this->shader->setUniform("u_g", this->g_phase);
 	// Add the texture if it exists
@@ -250,7 +250,7 @@ void VolumeMaterial::renderInMenu()
 {
 	ImGui::Text("Material Type: %s", std::string("Volume").c_str());
 
-	// Absorption shader or Emission-absorption shader
+	// Type of shader (Absorption, Emission-absorption or Full-volume shaders)
 	const char* shader_types[] = { "Absorption", "Emission-Absorption", "Full-Volume"};
 	if (ImGui::Combo("Shader Type", (int*)&this->shader_type, shader_types, IM_ARRAYSIZE(shader_types)))
 	{
@@ -259,26 +259,30 @@ void VolumeMaterial::renderInMenu()
 		else if (this->shader_type == 1) this->shader = this->emission_absorption_shader;
 		else this->shader = this->full_volume_shader;
 	}
-	// Homogeneous or heterogeneous selector
-	//const char* types[] = { "Homogeneous", "Heterogeneous" };
+
+	// Type of absorption (homogeneous, 3D noise or VDB file)
 	const char* types[] = { "Constant density", "3D noise", "VDB file" };
-	ImGui::Combo("Absorption Type", (int*)&this->absorption_type, types, IM_ARRAYSIZE(types));
+	ImGui::Combo("Volume Type", (int*)&this->volume_type, types, IM_ARRAYSIZE(types));
+
 	// Step length (always displayed)
 	ImGui::SliderFloat("Step Length", (float*)&this->step_size, 0.01f, 0.02f);
+
 	// Homogeneous GUI
-	if (this->absorption_type == 0) {
+	if (this->volume_type == 0) {
 		ImGui::SliderFloat("Absorption Coefficient", (float*)&this->absorption_coeff, 0.0f, 5.0f);
 		if (this->shader_type == 2) ImGui::SliderFloat("Scattering Coefficient", (float*)&this->scattering_coeff, 0.0f, 5.0f);
 	}
 	// Heterogeneous GUI
 	else {
-		ImGui::SliderFloat("Absorption Scale", (float*)&this->density_scale, 0.0f, 10.0f);
+		ImGui::SliderFloat("Absorption Scale", (float*)&this->absorption_scale, 0.0f, 10.0f);
 		if (this->shader_type == 2) ImGui::SliderFloat("Scattering Scale", (float*)&this->scattering_scale, 0.0f, 10.0f);
 	}
-	if (this->absorption_type == 1) ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 10.0f);
-	// Emission-Absorption extra parameter (emitted color)
+	if (this->volume_type == 1) ImGui::SliderFloat("Noise Frequency", (float*)&this->noise_freq, 2.5f, 10.0f);
+	
+	// Emission extra parameter (emitted color)
 	if (this->shader_type != 0) ImGui::ColorEdit3("Emitted Color", (float*)&this->color);
-	// Scattering extra parameter (light steps)
+	
+	// Scattering extra parameter (light steps and factor g)
 	if (this->shader_type == 2) {
 		ImGui::SliderInt("Light Steps", (int*)&this->light_steps, 2, 32);
 		ImGui::SliderFloat("Factor g", (float*)&this->g_phase, -1.0f, 1.0f);
